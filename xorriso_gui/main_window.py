@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QMainWindow, QSplitter, QToolBar, QStatusBar,
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 from PySide6.QtGui import QAction, QIcon
 
-from xorriso_gui.engine.drive_manager import scan_drives, get_toc, DriveInfo
+from xorriso_gui.engine.drive_manager import scan_drives, get_toc, DriveInfo, get_media_space
 from xorriso_gui.engine.iso_reader import load_iso_contents, load_empty_iso
 from xorriso_gui.engine.task_builder import TaskBuilder
 from xorriso_gui.engine.xorriso_process import XorrisoProcess
@@ -175,6 +175,13 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("就绪")
 
+    def _update_media_space(self, path):
+        if not path or not path.startswith("/dev/"):
+            return
+        summary = get_media_space(path)
+        if summary:
+            self.status_bar.showMessage(f"📀 {summary}")
+
     def _refresh_drives(self):
         self.status_bar.showMessage("扫描驱动器...")
         self.drive_combo.clear()
@@ -227,6 +234,7 @@ class MainWindow(QMainWindow):
             self.log_viewer.append_info(f"已加载: {path}")
             self.status_bar.showMessage(f"已加载: {path}")
             self.output_combo.setEditText(path)
+            self._update_media_space(path)
 
     def _new_empty_iso(self):
         root = load_empty_iso()
@@ -458,6 +466,7 @@ class MainWindow(QMainWindow):
             if not error:
                 self.iso_panel.load_contents(root)
                 self.status_bar.showMessage(f"已重新加载: {output}")
+                self._update_media_space(output)
             else:
                 self.status_bar.showMessage(f"重新加载失败: {error}")
 

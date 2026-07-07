@@ -96,3 +96,21 @@ def get_toc(drive_path):
         return status, sessions, output
     except Exception as e:
         return "error", [], str(e)
+
+
+def get_media_space(drive_path):
+    try:
+        result = subprocess.run(
+            ["xorriso", "-dev", drive_path, "-tell_media_space"],
+            capture_output=True, text=True, timeout=30
+        )
+        output = result.stdout + result.stderr
+        summary = None
+        for line in output.split("\n"):
+            line = line.strip()
+            if line.startswith("Media summary:"):
+                summary = line[len("Media summary:"):].strip()
+                break
+        return summary
+    except Exception:
+        return None
