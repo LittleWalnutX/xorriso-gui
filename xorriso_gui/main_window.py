@@ -30,6 +30,8 @@ class MainWindow(QMainWindow):
         self._current_drive_path = None
         self._output_path = None
         self._is_disc_mode = True
+        self._preview_mode = False
+        self._actual_root = load_empty_iso()
         self._pending_args = []
         self._pending_display = ""
 
@@ -98,6 +100,11 @@ class MainWindow(QMainWindow):
         self.disc_mode_btn.setToolTip("直接对光盘续刻（-dev模式）")
         self.disc_mode_btn.clicked.connect(self._toggle_disc_mode)
         tb_layout.addWidget(self.disc_mode_btn)
+
+        self.preview_btn = QPushButton("预览模式")
+        self.preview_btn.setToolTip("在右侧面板中即时预览所有待执行操作的最终效果")
+        self.preview_btn.clicked.connect(self._toggle_preview)
+        tb_layout.addWidget(self.preview_btn)
 
         tb_layout.addSpacing(16)
 
@@ -218,16 +225,21 @@ class MainWindow(QMainWindow):
             self.log_viewer.append_error(f"加载失败: {error}")
             self.status_bar.showMessage(f"加载失败: {error}")
         else:
+            self._actual_root = root.clone()
             self.iso_panel.load_contents(root)
             self.log_viewer.append_info(f"已加载: {path}")
             self.status_bar.showMessage(f"已加载: {path}")
 
     def _new_empty_iso(self):
         root = load_empty_iso()
+        self._actual_root = root.clone()
         self.iso_panel.load_contents(root)
         self.drive_combo.setEditText("")
         self._set_disc_mode(False)
-        self.log_viewer.append_info("已创建新的空白 ISO 映像（续刻模式已自动关闭）")
+        self._set_preview_mode(True)
+        self._tasks.clear()
+        self.task_queue.clear_all()
+        self.log_viewer.append_info("已创建新的空白 ISO 映像（已自动开启预览模式）")
         self.status_bar.showMessage("新的空白 ISO 映像")
 
     def _toggle_disc_mode(self):
@@ -244,12 +256,66 @@ class MainWindow(QMainWindow):
             self.disc_mode_btn.setText("续刻模式")
             self.disc_mode_btn.setStyleSheet("")
 
+    def _toggle_preview(self):
+        self._set_preview_mode(not self._preview_mode)
+
+    def _set_preview_mode(self, enabled):
+        self._preview_mode = enabled
+        if enabled:
+            self.preview_btn.setText("预览模式 ✓")
+            self.preview_btn.setStyleSheet(
+                "QPushButton { background-color: #2e86c1; color: white; }"
+            )
+        else:
+            self.preview_btn.setText("预览模式")
+            self.preview_btn.setStyleSheet("")
+        self._refresh_display()
+
+    def _refresh_display(self):
+        if self._preview_mode:
+            self._rebuild_preview()
+        else:
+            self.iso_panel.load_contents(self._actual_root.clone())
+
+    def _rebuild_preview(self):
+        root = self._actual_root.clone()
+        for task in self._tasks:
+            self._apply_task_to_tree(root, task)
+        _add_placeholders_to_tree(root)
+        self.iso_panel.load_contents(root)
+
+    def _apply_task_to_tree(self, root, task):
+        if task.task_type == TaskType.MAP or task.task_type == TaskType.ADD:
+            parent_path, name = _split_iso_path(task.target)
+            parent = _find_node(root, parent_path)
+            if parent and parent.is_dir:
+                _remove_placeholder(parent)
+                node = FileNode(name=name, path=task.target, size=0,
+                                is_dir=False, mode="-rw-r--r--")
+                parent.add_child(node)
+                parent.sort_children()
+        elif task.task_type == TaskType.MKDIR:
+            parent_path, name = _split_iso_path(task.target)
+            parent = _find_node(root, parent_path)
+            if parent and parent.is_dir:
+                _remove_placeholder(parent)
+                if not parent.find_child(name):
+                    node = FileNode(name=name, path=task.target,
+                                    is_dir=True, mode="drwxr-xr-x")
+                    parent.add_child(node)
+                    parent.sort_children()
+        elif task.task_type == TaskType.REMOVE:
+            _remove_node_from_tree(root, task.target)
+        elif task.task_type == TaskType.RENAME:
+            _rename_node_in_tree(root, task.source, task.target)
+
     def _on_add_to_iso(self, local_path, iso_path):
         task = TaskItem(TaskType.MAP, source=local_path, target=iso_path,
                         description=f"添加 {local_path} → {iso_path}")
         self._tasks.append(task)
         self.task_queue.add_task(task)
         self.log_viewer.append_info(f"已加入任务: +添加 {local_path} → {iso_path}")
+        self._refresh_display()
 
     def _on_remove_from_iso(self, iso_path):
         task = TaskItem(TaskType.REMOVE, target=iso_path,
@@ -257,6 +323,7 @@ class MainWindow(QMainWindow):
         self._tasks.append(task)
         self.task_queue.add_task(task)
         self.log_viewer.append_info(f"已加入任务: -删除 {iso_path}")
+        self._refresh_display()
 
     def _on_rename_in_iso(self, old_path, new_path):
         task = TaskItem(TaskType.RENAME, source=old_path, target=new_path,
@@ -264,6 +331,7 @@ class MainWindow(QMainWindow):
         self._tasks.append(task)
         self.task_queue.add_task(task)
         self.log_viewer.append_info(f"已加入任务: 重命名 {old_path} → {new_path}")
+        self._refresh_display()
 
     def _on_extract_from_iso(self, iso_path, dest_path):
         task = TaskItem(TaskType.EXTRACT, source=iso_path, target=dest_path,
@@ -271,6 +339,7 @@ class MainWindow(QMainWindow):
         self._tasks.append(task)
         self.task_queue.add_task(task)
         self.log_viewer.append_info(f"已加入任务: 提取 {iso_path} → {dest_path}")
+        self._refresh_display()
 
     def _on_mkdir_in_iso(self, iso_path):
         task = TaskItem(TaskType.MKDIR, target=iso_path,
@@ -278,6 +347,7 @@ class MainWindow(QMainWindow):
         self._tasks.append(task)
         self.task_queue.add_task(task)
         self.log_viewer.append_info(f"已加入任务: 新建文件夹 {iso_path}")
+        self._refresh_display()
 
     def _on_open_terminal(self, path):
         try:
@@ -292,6 +362,7 @@ class MainWindow(QMainWindow):
             self._tasks.clear()
             self.task_queue.clear_all()
             self.log_viewer.append_info("任务队列已清空")
+            self._refresh_display()
 
     def _on_execute_clicked(self):
         if not self._build_and_confirm():
@@ -429,3 +500,66 @@ class MainWindow(QMainWindow):
         for p in self.iso_panel.get_selected_paths():
             if p and p != "/":
                 self._on_remove_from_iso(p)
+
+
+def _split_iso_path(path):
+    path = path.rstrip("/")
+    if "/" not in path:
+        return "/", path
+    idx = path.rfind("/")
+    return path[:idx] if path[:idx] else "/", path[idx + 1:]
+
+
+def _find_node(root, path):
+    if path == "/" or path == "":
+        return root
+    parts = [p for p in path.strip("/").split("/") if p]
+    current = root
+    for part in parts:
+        found = None
+        for child in current.children:
+            if not child.is_placeholder and child.name == part:
+                found = child
+                break
+        if found is None:
+            return None
+        current = found
+    return current
+
+
+def _remove_node_from_tree(root, path):
+    node = _find_node(root, path)
+    if node and node.parent:
+        node.parent.children = [c for c in node.parent.children if c is not node]
+        node.parent.sort_children()
+        _add_placeholders_to_tree(root)
+
+
+def _rename_node_in_tree(root, old_path, new_path):
+    node = _find_node(root, old_path)
+    if node:
+        old_name = node.name
+        new_name = new_path.rstrip("/").rsplit("/", 1)[-1]
+        node.name = new_name
+        node.path = new_path
+        node.parent.sort_children()
+        _add_placeholders_to_tree(root)
+
+
+def _remove_placeholder(parent):
+    parent.children = [c for c in parent.children if not c.is_placeholder]
+
+
+def _add_placeholders_to_tree(node):
+    if node.is_dir:
+        has_real_children = any(not c.is_placeholder for c in node.children)
+        node.children = [c for c in node.children if not c.is_placeholder]
+        if not has_real_children:
+            placeholder = FileNode(
+                name="——（空文件夹）——", path="", is_dir=False,
+                is_placeholder=True
+            )
+            node.add_child(placeholder)
+        for child in node.children:
+            if not child.is_placeholder:
+                _add_placeholders_to_tree(child)

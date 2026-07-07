@@ -40,6 +40,15 @@ class FileNode:
                 return c
         return None
 
+    def clone(self):
+        n = FileNode(name=self.name, path=self.path, size=self.size,
+                     is_dir=self.is_dir, is_symlink=self.is_symlink,
+                     mode=self.mode, date=self.date,
+                     is_placeholder=self.is_placeholder)
+        for child in self.children:
+            n.add_child(child.clone())
+        return n
+
     def sort_children(self):
         self.children.sort(key=lambda n: (not n.is_dir, n.name.lower()))
 
