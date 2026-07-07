@@ -8,8 +8,8 @@ from PySide6.QtWidgets import (QMainWindow, QSplitter, QToolBar, QStatusBar,
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 from PySide6.QtGui import QAction, QIcon
 
-from xorriso_gui.engine.drive_manager import scan_drives, get_toc, DriveInfo, get_media_space
-from xorriso_gui.engine.iso_reader import load_iso_contents, load_empty_iso
+from xorriso_gui.engine.workers import ScanDrivesWorker, LoadIsoWorker, MediaSpaceWorker
+from xorriso_gui.engine.iso_reader import load_empty_iso
 from xorriso_gui.engine.task_builder import TaskBuilder
 from xorriso_gui.engine.xorriso_process import XorrisoProcess
 from xorriso_gui.models.task_item import TaskItem, TaskType
@@ -178,25 +178,31 @@ class MainWindow(QMainWindow):
     def _update_media_space(self, path):
         if not path or not path.startswith("/dev/"):
             return
-        summary = get_media_space(path)
+        self._space_worker = MediaSpaceWorker(path, self)
+        self._space_worker.result.connect(self._on_media_space)
+        self._space_worker.start()
+
+    def _on_media_space(self, path, summary):
         if summary:
             self.status_bar.showMessage(f"📀 {summary}")
 
     def _refresh_drives(self):
         self.status_bar.showMessage("扫描驱动器...")
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        self._scan_worker = ScanDrivesWorker(self)
+        self._scan_worker.result.connect(self._on_drives_scanned)
+        self._scan_worker.start()
+
+    def _on_drives_scanned(self, drives):
+        QApplication.restoreOverrideCursor()
         self.drive_combo.clear()
         self.output_combo.clear()
-
-        drives = scan_drives()
         for d in drives:
             self.drive_combo.addItem(d.display_name(), d.path)
             self.output_combo.addItem(d.display_name(), d.path)
-
         if drives:
             self.status_bar.showMessage(f"发现 {len(drives)} 个驱动器")
         else:
-            self.drive_combo.setEditText("")
-            self.output_combo.setEditText("")
             self.status_bar.showMessage("未发现光驱，可手动输入路径或ISO文件")
 
     def _browse_iso(self):
@@ -215,7 +221,7 @@ class MainWindow(QMainWindow):
             return
 
         self.status_bar.showMessage(f"正在加载 {path} ...")
-        QApplication.processEvents()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
 
         if path.startswith("/dev/"):
             self._set_disc_mode(True)
@@ -224,7 +230,13 @@ class MainWindow(QMainWindow):
             self._set_disc_mode(False)
             self.log_viewer.append_info("检测到文件路径，已自动关闭续刻模式")
 
-        root, error = load_iso_contents(drive_path=path)
+        self._load_worker = LoadIsoWorker(path, self)
+        self._load_worker.result.connect(self._on_iso_loaded)
+        self._load_worker.start()
+
+    def _on_iso_loaded(self, root, error):
+        QApplication.restoreOverrideCursor()
+        path = self._load_worker.drive_path
         if error:
             self.log_viewer.append_error(f"加载失败: {error}")
             self.status_bar.showMessage(f"加载失败: {error}")
@@ -462,13 +474,18 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("重新加载 ISO 内容...")
         output = _resolve_combo_path(self.output_combo)
         if output:
-            root, error = load_iso_contents(drive_path=output)
-            if not error:
-                self.iso_panel.load_contents(root)
-                self.status_bar.showMessage(f"已重新加载: {output}")
-                self._update_media_space(output)
-            else:
-                self.status_bar.showMessage(f"重新加载失败: {error}")
+            self._reload_worker = LoadIsoWorker(output, self)
+            self._reload_worker.result.connect(self._on_reload_done)
+            self._reload_worker.start()
+
+    def _on_reload_done(self, root, error):
+        if not error:
+            self.iso_panel.load_contents(root)
+            path = self._reload_worker.drive_path
+            self.status_bar.showMessage(f"已重新加载: {path}")
+            self._update_media_space(path)
+        else:
+            self.status_bar.showMessage(f"重新加载失败: {error}")
 
     def _install_focus_tracking(self):
         pass
