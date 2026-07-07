@@ -8,7 +8,7 @@ from PySide6.QtGui import QIcon
 from xorriso_gui.main_window import MainWindow
 
 
-_ICON_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "icon.svg")
+_ICON_PATH = os.path.join(os.path.dirname(__file__), "assets", "icon.svg")
 
 
 def main():
