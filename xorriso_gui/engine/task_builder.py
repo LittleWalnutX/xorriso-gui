@@ -51,6 +51,8 @@ class TaskBuilder:
         if has_extract:
             args.extend(["-osirrox", "on"])
 
+        args.extend(["-iso_rr_pattern", "off"])
+
         group_add = []
         group_map = []
         group_update = []
