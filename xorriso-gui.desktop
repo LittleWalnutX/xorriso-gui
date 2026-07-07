@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=xorriso-gui
+Comment=Graphical frontend for xorriso ISO image manipulation
+Exec=xorriso-gui
+Icon=xorriso-gui
+Categories=Utility;DiscBurning;
+Terminal=false

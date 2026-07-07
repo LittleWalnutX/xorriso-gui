@@ -140,7 +140,7 @@ class MainWindow(QMainWindow):
         row2.addWidget(QLabel("卷标:"))
         self.volume_id_edit = QLineEdit()
         self.volume_id_edit.setPlaceholderText("(可选)")
-        self.volume_id_edit.setMaximumWidth(120)
+        self.volume_id_edit.setMaximumWidth(180)
         self.volume_id_edit.setToolTip("ISO 卷标名（Volume ID）")
         row2.addWidget(self.volume_id_edit)
 
