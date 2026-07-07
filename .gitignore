@@ -19,3 +19,4 @@ venv/
 Thumbs.db*.png
 *.png
 build_appimage/
+*.spec
