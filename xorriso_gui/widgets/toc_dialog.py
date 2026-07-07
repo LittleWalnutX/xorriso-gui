@@ -31,8 +31,8 @@ class TocDialog(QDialog):
         drive_layout.addWidget(show_btn)
         layout.addLayout(drive_layout)
 
-        self.table = QTableWidget(0, 4)
-        self.table.setHorizontalHeaderLabels(["Session", "LBA", "Blocks", "Size"])
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["Session", "LBA", "Blocks", "Size", "Volume ID"])
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -82,29 +82,26 @@ class TocDialog(QDialog):
 
         sessions = []
         for line in output.split("\n"):
-            line = line.strip()
-            parts = line.split()
-            if len(parts) >= 3:
-                try:
-                    num = int(parts[0])
-                    lba = int(parts[1].rstrip("s"))
-                    blocks = int(parts[2])
-                    sessions.append((num, lba, blocks))
-                except ValueError:
-                    continue
+            if "ISO session" not in line:
+                continue
+            parts = [p.strip() for p in line.split(",")]
+            try:
+                prefix, num = parts[0].rsplit(None, 1)
+                lba = int(parts[1].rstrip("s"))
+                blocks = int(parts[2].rstrip("s"))
+                sessions.append((int(num), lba, blocks, parts[3] if len(parts) > 3 else ""))
+            except (ValueError, IndexError):
+                continue
 
-        for num, lba, blocks in sessions:
+        for num, lba, blocks, volid in sessions:
             row = self.table.rowCount()
             self.table.insertRow(row)
             self.table.setItem(row, 0, QTableWidgetItem(str(num)))
             self.table.setItem(row, 1, QTableWidgetItem(str(lba)))
             self.table.setItem(row, 2, QTableWidgetItem(str(blocks)))
-            size_info = ""
-            if blocks > 0 and row > 0:
-                prev_lba = sessions[row - 1][1]
-                prev_blocks = sessions[row - 1][2]
-                size_info = f"{blocks * 2048 / (1024**3):.1f}G"
-            self.table.setItem(row, 3, QTableWidgetItem(size_info))
+            size_gb = blocks * 2048 / (1024**3)
+            self.table.setItem(row, 3, QTableWidgetItem(f"{size_gb:.1f}G"))
+            self.table.setItem(row, 4, QTableWidgetItem(volid))
 
 
 class _TocWorker(QThread):

@@ -430,7 +430,7 @@ class MainWindow(QMainWindow):
         msg.setDetailedText(display)
         run_btn = msg.addButton("▶ 开始检查", QMessageBox.AcceptRole)
         msg.addButton("取消", QMessageBox.RejectRole)
-        if msg.exec() == QMessageBox.DialogCode.Accepted and msg.clickedButton() == run_btn:
+        if msg.exec():
             self.log_viewer.append_info("=" * 60)
             self.log_viewer.append_info(f"执行命令: {display}")
             self.log_viewer.append_info("=" * 60)

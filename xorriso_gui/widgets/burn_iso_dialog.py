@@ -120,6 +120,6 @@ class BurnIsoDialog(QDialog):
         run_btn = msg.addButton("▶ 刻录", QMessageBox.AcceptRole)
         msg.addButton("取消", QMessageBox.RejectRole)
 
-        if msg.exec() == QMessageBox.DialogCode.Accepted and msg.clickedButton() == run_btn:
+        if msg.exec():
             self.execute_requested.emit(args, display)
             self.accept()
