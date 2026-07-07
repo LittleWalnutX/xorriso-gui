@@ -4,7 +4,7 @@ import subprocess
 from PySide6.QtWidgets import (QMainWindow, QSplitter, QToolBar, QStatusBar,
                                 QVBoxLayout, QWidget, QComboBox, QPushButton,
                                 QMessageBox, QLabel, QHBoxLayout, QTabWidget,
-                                QFileDialog, QApplication, QLineEdit)
+                                QFileDialog, QApplication, QLineEdit, QSizePolicy)
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 from PySide6.QtGui import QAction, QIcon
 
@@ -66,13 +66,15 @@ class MainWindow(QMainWindow):
         tb_wrapper.setSpacing(4)
 
         row1 = QHBoxLayout()
+        row1.addStretch()
 
         row1.addWidget(QLabel("输入驱动器/文件:"))
         self.drive_combo = QComboBox()
-        self.drive_combo.setMinimumWidth(200)
+        self.drive_combo.setMinimumWidth(150)
+        self.drive_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.drive_combo.setEditable(True)
         self.drive_combo.setToolTip("选择输入驱动器、ISO文件路径，或留空新建ISO")
-        row1.addWidget(self.drive_combo)
+        row1.addWidget(self.drive_combo, stretch=2)
 
         self.refresh_btn = QPushButton("刷新")
         self.refresh_btn.clicked.connect(self._refresh_drives)
@@ -90,10 +92,11 @@ class MainWindow(QMainWindow):
 
         row1.addWidget(QLabel("输出到:"))
         self.output_combo = QComboBox()
-        self.output_combo.setMinimumWidth(200)
+        self.output_combo.setMinimumWidth(150)
+        self.output_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.output_combo.setEditable(True)
         self.output_combo.setToolTip("输出目标（设备路径或ISO文件路径）")
-        row1.addWidget(self.output_combo)
+        row1.addWidget(self.output_combo, stretch=2)
 
         self.new_iso_btn = QPushButton("新建空ISO")
         self.new_iso_btn.clicked.connect(self._new_empty_iso)
