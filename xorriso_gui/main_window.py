@@ -4,7 +4,7 @@ import subprocess
 from PySide6.QtWidgets import (QMainWindow, QSplitter, QToolBar, QStatusBar,
                                 QVBoxLayout, QWidget, QComboBox, QPushButton,
                                 QMessageBox, QLabel, QHBoxLayout, QTabWidget,
-                                QFileDialog, QApplication)
+                                QFileDialog, QApplication, QLineEdit)
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 from PySide6.QtGui import QAction, QIcon
 
@@ -18,6 +18,8 @@ from xorriso_gui.widgets.disk_panel import DiskPanel
 from xorriso_gui.widgets.iso_panel import IsoPanel
 from xorriso_gui.widgets.task_queue_widget import TaskQueueWidget
 from xorriso_gui.widgets.log_viewer import LogViewer
+from xorriso_gui.widgets.burn_iso_dialog import BurnIsoDialog
+from xorriso_gui.widgets.toc_dialog import TocDialog
 
 
 class MainWindow(QMainWindow):
@@ -106,6 +108,14 @@ class MainWindow(QMainWindow):
         self.preview_btn.clicked.connect(self._toggle_preview)
         tb_layout.addWidget(self.preview_btn)
 
+        tb_layout.addSpacing(8)
+        tb_layout.addWidget(QLabel("卷标:"))
+        self.volume_id_edit = QLineEdit()
+        self.volume_id_edit.setPlaceholderText("(可选)")
+        self.volume_id_edit.setMaximumWidth(120)
+        self.volume_id_edit.setToolTip("ISO 卷标名（Volume ID）")
+        tb_layout.addWidget(self.volume_id_edit)
+
         tb_layout.addSpacing(16)
 
         self.left_arrow_btn = QPushButton("←")
@@ -125,6 +135,23 @@ class MainWindow(QMainWindow):
         self.trash_btn.setFixedWidth(32)
         self.trash_btn.clicked.connect(self._on_trash)
         tb_layout.addWidget(self.trash_btn)
+
+        tb_layout.addSpacing(16)
+
+        self.burn_iso_btn = QPushButton("刻录ISO")
+        self.burn_iso_btn.setToolTip("将已有的 .iso 文件刻录到光盘")
+        self.burn_iso_btn.clicked.connect(self._on_burn_iso_dialog)
+        tb_layout.addWidget(self.burn_iso_btn)
+
+        self.toc_btn = QPushButton("TOC")
+        self.toc_btn.setToolTip("查看光盘的 Table of Contents 会话信息")
+        self.toc_btn.clicked.connect(self._on_toc_dialog)
+        tb_layout.addWidget(self.toc_btn)
+
+        self.check_media_btn = QPushButton("检查介质")
+        self.check_media_btn.setToolTip("扫描光盘介质检查损坏块")
+        self.check_media_btn.clicked.connect(self._on_check_media)
+        tb_layout.addWidget(self.check_media_btn)
 
         tb_layout.addStretch()
 
@@ -373,6 +400,39 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
+    def _on_burn_iso_dialog(self):
+        dlg = BurnIsoDialog(self)
+        dlg.execute_requested.connect(self._run_xorriso_direct)
+        dlg.exec()
+
+    def _on_toc_dialog(self):
+        dlg = TocDialog(self)
+        dlg.exec()
+
+    def _on_check_media(self):
+        drive = _resolve_combo_path(self.drive_combo)
+        if not drive or not drive.startswith("/dev/"):
+            drive = _resolve_combo_path(self.output_combo)
+        if not drive or not drive.startswith("/dev/"):
+            drive = "/dev/cdrom"
+        args = ["-dev", drive, "-check_media",
+                "time_limit=1800", "report=blocks_files"]
+        display = f"xorriso -dev {drive} -check_media time_limit=1800 report=blocks_files"
+        msg = QMessageBox(self)
+        msg.setWindowTitle("检查介质")
+        msg.setIcon(QMessageBox.Question)
+        msg.setText(f"即将对 {drive} 进行介质检查（最长30分钟）")
+        msg.setDetailedText(display)
+        run_btn = msg.addButton("▶ 开始检查", QMessageBox.AcceptRole)
+        msg.addButton("取消", QMessageBox.RejectRole)
+        if msg.exec() == QMessageBox.DialogCode.Accepted and msg.clickedButton() == run_btn:
+            self.log_viewer.append_info("=" * 60)
+            self.log_viewer.append_info(f"执行命令: {display}")
+            self.log_viewer.append_info("=" * 60)
+            self.status_bar.showMessage("正在检查介质 ...")
+            QApplication.processEvents()
+            self._xorriso.run(args)
+
     def _on_clear_tasks(self):
         reply = QMessageBox.question(self, "确认清空", "确定要清空所有任务吗？",
                                      QMessageBox.Yes | QMessageBox.No)
@@ -389,6 +449,10 @@ class MainWindow(QMainWindow):
 
     def _build_and_confirm(self):
         builder = TaskBuilder()
+
+        vid = self.volume_id_edit.text().strip()
+        if vid:
+            builder.set_volume_id(vid)
 
         input_drive = _resolve_combo_path(self.drive_combo)
         output_drive = _resolve_combo_path(self.output_combo)
@@ -446,10 +510,16 @@ class MainWindow(QMainWindow):
         self.log_viewer.append_info("=" * 60)
         self.log_viewer.append_info(f"执行命令: {display}")
         self.log_viewer.append_info("=" * 60)
-
         self.status_bar.showMessage("正在执行 xorriso ...")
         QApplication.processEvents()
+        self._xorriso.run(args)
 
+    def _run_xorriso_direct(self, args, display):
+        self.log_viewer.append_info("=" * 60)
+        self.log_viewer.append_info(f"执行命令: {display}")
+        self.log_viewer.append_info("=" * 60)
+        self.status_bar.showMessage("正在执行 xorriso ...")
+        QApplication.processEvents()
         self._xorriso.run(args)
 
     def _on_stdout(self, text):
