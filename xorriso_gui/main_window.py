@@ -201,10 +201,7 @@ class MainWindow(QMainWindow):
             self.drive_combo.setEditText(path)
 
     def _load_drive(self):
-        path = self.drive_combo.currentText()
-        data = self.drive_combo.currentData()
-        if data:
-            path = data
+        path = _resolve_combo_path(self.drive_combo)
 
         if not path:
             self.log_viewer.append_info("请选择或输入一个驱动器或ISO文件路径")
@@ -373,15 +370,8 @@ class MainWindow(QMainWindow):
     def _build_and_confirm(self):
         builder = TaskBuilder()
 
-        input_drive = self.drive_combo.currentText().strip()
-        input_data = self.drive_combo.currentData()
-        if input_data:
-            input_drive = input_data
-
-        output_drive = self.output_combo.currentText().strip()
-        output_data = self.output_combo.currentData()
-        if output_data:
-            output_drive = output_data
+        input_drive = _resolve_combo_path(self.drive_combo)
+        output_drive = _resolve_combo_path(self.output_combo)
 
         input_is_disc = input_drive.startswith("/dev/") if input_drive else False
         output_is_disc = output_drive.startswith("/dev/") if output_drive else False
@@ -462,10 +452,7 @@ class MainWindow(QMainWindow):
 
     def _reload_iso_after_commit(self):
         self.status_bar.showMessage("重新加载 ISO 内容...")
-        output = self.output_combo.currentText().strip()
-        output_data = self.output_combo.currentData()
-        if output_data:
-            output = output_data
+        output = _resolve_combo_path(self.output_combo)
         if output:
             root, error = load_iso_contents(drive_path=output)
             if not error:
@@ -566,3 +553,18 @@ def _add_placeholders_to_tree(node):
         for child in node.children:
             if not child.is_placeholder:
                 _add_placeholders_to_tree(child)
+
+
+def _resolve_combo_path(combo):
+    line_edit = combo.lineEdit()
+    if line_edit:
+        text = line_edit.text().strip()
+    else:
+        text = combo.currentText().strip()
+    for i in range(combo.count()):
+        if combo.itemText(i) == text:
+            data = combo.itemData(i)
+            if data:
+                return data
+            break
+    return text
