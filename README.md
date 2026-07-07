@@ -26,6 +26,7 @@ python3 main.py
 - **驱动器扫描** — 自动发现系统光驱，支持手动输入路径或浏览选择 ISO 文件
 - **光盘空间显示** — 加载光盘后状态栏显示已用/可用空间
 - **实时日志** — 暗色主题日志面板，xorriso 输出着色分类
+- **异步 I/O** — 驱动器扫描、光盘加载、空间查询均在后台 QThread 运行，界面无卡顿
 
 ### 拖拽与右键菜单
 
@@ -95,7 +96,8 @@ xorriso-gui/
     │   ├── xorriso_process.py   # QProcess 异步包装
     │   ├── drive_manager.py     # 驱动器扫描、TOC 解析、介质空间查询
     │   ├── iso_reader.py        # xorriso -find 输出 → 文件树 + 占位符
-    │   └── task_builder.py      # 任务队列 → xorriso 命令行（含 -iso_rr_pattern off）
+    │   ├── task_builder.py      # 任务队列 → xorriso 命令行
+    │   └── workers.py           # QThread 后台 IO 线程（扫描/加载/空间查询）
     ├── models/
     │   ├── file_tree_model.py   # QAbstractItemModel 文件树 + FileNode.clone()
     │   └── task_item.py         # TaskItem / TaskType 数据结构
