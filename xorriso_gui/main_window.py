@@ -109,18 +109,11 @@ class MainWindow(QMainWindow):
         self.preview_btn.clicked.connect(self._toggle_preview)
         row1.addWidget(self.preview_btn)
 
-        row1.addSpacing(8)
-        row1.addWidget(QLabel("卷标:"))
-        self.volume_id_edit = QLineEdit()
-        self.volume_id_edit.setPlaceholderText("(可选)")
-        self.volume_id_edit.setMaximumWidth(120)
-        self.volume_id_edit.setToolTip("ISO 卷标名（Volume ID）")
-        row1.addWidget(self.volume_id_edit)
-
         row1.addStretch()
         tb_wrapper.addLayout(row1)
 
         row2 = QHBoxLayout()
+        row2.addStretch()
 
         self.left_arrow_btn = QPushButton("←")
         self.left_arrow_btn.setToolTip("将右侧选中的文件提取到左侧当前目录")
@@ -140,7 +133,15 @@ class MainWindow(QMainWindow):
         self.trash_btn.clicked.connect(self._on_trash)
         row2.addWidget(self.trash_btn)
 
-        row2.addSpacing(8)
+        row2.addSpacing(16)
+        row2.addWidget(QLabel("卷标:"))
+        self.volume_id_edit = QLineEdit()
+        self.volume_id_edit.setPlaceholderText("(可选)")
+        self.volume_id_edit.setMaximumWidth(120)
+        self.volume_id_edit.setToolTip("ISO 卷标名（Volume ID）")
+        row2.addWidget(self.volume_id_edit)
+
+        row2.addSpacing(16)
 
         self.burn_iso_btn = QPushButton("刻录ISO")
         self.burn_iso_btn.setToolTip("将已有的 .iso 文件刻录到光盘")
