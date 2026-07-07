@@ -1,8 +1,11 @@
+import os
+import subprocess
+
 from PySide6.QtWidgets import (QMainWindow, QSplitter, QToolBar, QStatusBar,
                                 QVBoxLayout, QWidget, QComboBox, QPushButton,
                                 QMessageBox, QLabel, QHBoxLayout, QTabWidget,
                                 QFileDialog, QApplication)
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 from PySide6.QtGui import QAction, QIcon
 
 from xorriso_gui.engine.drive_manager import scan_drives, get_toc, DriveInfo
@@ -26,7 +29,7 @@ class MainWindow(QMainWindow):
         self._tasks = []
         self._current_drive_path = None
         self._output_path = None
-        self._is_disc_mode = False
+        self._is_disc_mode = True
         self._pending_args = []
         self._pending_display = ""
 
@@ -37,6 +40,12 @@ class MainWindow(QMainWindow):
 
         self._init_ui()
         self._refresh_drives()
+
+        if self._is_disc_mode:
+            self.disc_mode_btn.setText("续刻模式 ✓")
+            self.disc_mode_btn.setStyleSheet(
+                "QPushButton { background-color: #e67e22; color: white; }"
+            )
 
     def _init_ui(self):
         central = QWidget()
@@ -90,6 +99,26 @@ class MainWindow(QMainWindow):
         self.disc_mode_btn.clicked.connect(self._toggle_disc_mode)
         tb_layout.addWidget(self.disc_mode_btn)
 
+        tb_layout.addSpacing(16)
+
+        self.left_arrow_btn = QPushButton("←")
+        self.left_arrow_btn.setToolTip("将右侧选中的文件提取到左侧当前目录")
+        self.left_arrow_btn.setFixedWidth(32)
+        self.left_arrow_btn.clicked.connect(self._on_transfer_left)
+        tb_layout.addWidget(self.left_arrow_btn)
+
+        self.right_arrow_btn = QPushButton("→")
+        self.right_arrow_btn.setToolTip("将左侧选中的文件添加到右侧当前目录")
+        self.right_arrow_btn.setFixedWidth(32)
+        self.right_arrow_btn.clicked.connect(self._on_transfer_right)
+        tb_layout.addWidget(self.right_arrow_btn)
+
+        self.trash_btn = QPushButton("🗑")
+        self.trash_btn.setToolTip("删除右侧选中的文件")
+        self.trash_btn.setFixedWidth(32)
+        self.trash_btn.clicked.connect(self._on_trash)
+        tb_layout.addWidget(self.trash_btn)
+
         tb_layout.addStretch()
 
         main_layout.addLayout(tb_layout)
@@ -130,6 +159,9 @@ class MainWindow(QMainWindow):
         self.iso_panel.prepare_remove.connect(self._on_remove_from_iso)
         self.iso_panel.prepare_rename.connect(self._on_rename_in_iso)
         self.iso_panel.prepare_extract.connect(self._on_extract_from_iso)
+        self.iso_panel.prepare_mkdir.connect(self._on_mkdir_in_iso)
+        self.disk_panel.add_to_iso.connect(self._on_add_to_iso)
+        self.disk_panel.open_terminal.connect(self._on_open_terminal)
 
     def _init_statusbar(self):
         self.status_bar = QStatusBar()
@@ -230,6 +262,19 @@ class MainWindow(QMainWindow):
         self._tasks.append(task)
         self.task_queue.add_task(task)
         self.log_viewer.append_info(f"已加入任务: 提取 {iso_path} → {dest_path}")
+
+    def _on_mkdir_in_iso(self, iso_path):
+        task = TaskItem(TaskType.MKDIR, target=iso_path,
+                        description=f"新建文件夹 {iso_path}")
+        self._tasks.append(task)
+        self.task_queue.add_task(task)
+        self.log_viewer.append_info(f"已加入任务: 新建文件夹 {iso_path}")
+
+    def _on_open_terminal(self, path):
+        try:
+            subprocess.Popen(["xdg-open", path])
+        except Exception:
+            pass
 
     def _on_clear_tasks(self):
         reply = QMessageBox.question(self, "确认清空", "确定要清空所有任务吗？",
@@ -340,3 +385,33 @@ class MainWindow(QMainWindow):
                 self.status_bar.showMessage(f"已重新加载: {output}")
             else:
                 self.status_bar.showMessage(f"重新加载失败: {error}")
+
+    def _install_focus_tracking(self):
+        pass
+
+    def eventFilter(self, obj, event):
+        return super().eventFilter(obj, event)
+
+    def _update_transfer_buttons(self):
+        pass
+
+    def _on_transfer_left(self):
+        paths = self.iso_panel.get_selected_paths()
+        dest = self.disk_panel.get_current_path()
+        for p in paths:
+            if p == "/":
+                continue
+            self._on_extract_from_iso(p, dest)
+
+    def _on_transfer_right(self):
+        paths = self.disk_panel.get_selected_paths()
+        iso_target = self.iso_panel.get_target_directory_for_context()
+        for p in paths:
+            name = p.rstrip("/").rsplit("/", 1)[-1]
+            iso_path = iso_target.rstrip("/") + "/" + name
+            self._on_add_to_iso(p, iso_path)
+
+    def _on_trash(self):
+        for p in self.iso_panel.get_selected_paths():
+            if p and p != "/":
+                self._on_remove_from_iso(p)

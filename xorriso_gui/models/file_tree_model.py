@@ -4,12 +4,13 @@ from PySide6.QtGui import QIcon, QColor
 
 class FileNode:
     def __init__(self, name="", path="", size=0, is_dir=False, is_symlink=False,
-                 mode="", date=""):
+                 mode="", date="", is_placeholder=False):
         self.name = name
         self.path = path
         self.size = size
         self.is_dir = is_dir
         self.is_symlink = is_symlink
+        self.is_placeholder = is_placeholder
         self.mode = mode
         self.date = date
         self.children = []
@@ -108,6 +109,8 @@ class FileTreeModel(QAbstractItemModel):
             return None
         col = index.column()
         if role == Qt.DisplayRole:
+            if node.is_placeholder:
+                return "——（空文件夹）——" if col == 0 else ""
             if col == 0:
                 return node.name
             elif col == 1:
@@ -119,13 +122,20 @@ class FileTreeModel(QAbstractItemModel):
             elif col == 3:
                 return node.date
         elif role == Qt.DecorationRole and col == 0:
+            if node.is_placeholder:
+                return QIcon()
             if node.is_symlink:
                 return self._icons["symlink"]
             elif node.is_dir:
                 return self._icons["dir"]
             else:
                 return self._icons["file"]
+        elif role == Qt.ForegroundRole and col == 0:
+            if node.is_placeholder:
+                return QColor("#999999")
         elif role == Qt.UserRole:
+            if node.is_placeholder:
+                return None
             return node.path
         return None
 
@@ -136,6 +146,9 @@ class FileTreeModel(QAbstractItemModel):
 
     def flags(self, index):
         if not index.isValid():
+            return Qt.NoItemFlags
+        node = index.internalPointer()
+        if node and node.is_placeholder:
             return Qt.NoItemFlags
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled
 

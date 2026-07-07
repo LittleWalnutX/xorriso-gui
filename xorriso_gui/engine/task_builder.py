@@ -56,6 +56,7 @@ class TaskBuilder:
         group_update = []
         group_rm = []
         group_mv = []
+        group_mkdir = []
         group_extract = []
         group_chmod = []
 
@@ -70,6 +71,8 @@ class TaskBuilder:
                 group_rm.append(task.target)
             elif task.task_type == TaskType.RENAME:
                 group_mv.append((task.source, task.target))
+            elif task.task_type == TaskType.MKDIR:
+                group_mkdir.append(task.target)
             elif task.task_type == TaskType.EXTRACT:
                 group_extract.append((task.source, task.target))
             elif task.task_type == TaskType.CHMOD:
@@ -84,6 +87,11 @@ class TaskBuilder:
             args.append("-mv")
             for src, dst in group_mv:
                 args.extend([src, dst])
+            args.append("--")
+
+        if group_mkdir:
+            args.append("-mkdir")
+            args.extend(group_mkdir)
             args.append("--")
 
         if group_chmod:
@@ -107,7 +115,7 @@ class TaskBuilder:
                 args.extend(["-extract", src, dst])
 
         has_changes = bool(group_add or group_map or group_update or group_rm
-                           or group_mv or group_chmod or group_extract)
+                           or group_mv or group_mkdir or group_chmod or group_extract)
 
         if not has_changes:
             args.extend(["-changes_pending", "yes"])

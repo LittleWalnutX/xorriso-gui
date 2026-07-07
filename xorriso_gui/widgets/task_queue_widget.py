@@ -12,6 +12,7 @@ _TYPE_LABELS = {
     TaskType.MAP: "映射",
     TaskType.UPDATE: "更新",
     TaskType.REMOVE: "删除",
+    TaskType.MKDIR: "新建文件夹",
     TaskType.RENAME: "重命名",
     TaskType.CHMOD: "改权限",
     TaskType.EXTRACT: "提取",

@@ -61,7 +61,22 @@ def _build_tree_from_flat(entries):
                 path_to_node[full_path] = node
 
     root.sort_children()
+    _add_placeholders(root)
     return root
+
+
+def _add_placeholders(node):
+    if node.is_dir:
+        if node.child_count() == 0:
+            placeholder = FileNode(
+                name="——（空文件夹）——", path="", is_dir=False,
+                is_placeholder=True
+            )
+            node.add_child(placeholder)
+        # Don't recurse into placeholder
+        for child in node.children:
+            if not child.is_placeholder:
+                _add_placeholders(child)
 
 
 def _call_xorriso_find(drive_path):
@@ -111,7 +126,9 @@ def _extract_drive_from_args(args):
 
 
 def load_empty_iso():
-    return FileNode(name="/", path="/", is_dir=True)
+    root = FileNode(name="/", path="/", is_dir=True)
+    _add_placeholders(root)
+    return root
 
 
 def parse_lsl_output(output, base_path="/"):

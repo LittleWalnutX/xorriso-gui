@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView,
-                                QHeaderView, QMenu, QInputDialog, QFileDialog)
+                                QHeaderView, QMenu, QInputDialog, QFileDialog,
+                                QMessageBox)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction
 
@@ -58,6 +59,7 @@ class IsoPanel(QWidget):
     prepare_extract = Signal(str, str)
     prepare_remove = Signal(str)
     prepare_rename = Signal(str, str)
+    prepare_mkdir = Signal(str)
     prepare_chmod = Signal(str, str)
 
     def __init__(self, parent=None):
@@ -109,6 +111,18 @@ class IsoPanel(QWidget):
     def get_selected_names(self):
         return self.tree.get_selected_names()
 
+    def get_target_directory_for_context(self):
+        selected = self.get_selected_paths()
+        if selected:
+            idx = self.tree.selectionModel().selectedIndexes()
+            if idx:
+                node = idx[0].internalPointer()
+                if node and node.is_dir:
+                    return node.path
+                if node and node.parent:
+                    return node.parent.path
+        return "/"
+
     def _on_files_dropped(self, local_paths, iso_target_path):
         for p in local_paths:
             name = p.rstrip("/").rsplit("/", 1)[-1]
@@ -117,9 +131,19 @@ class IsoPanel(QWidget):
 
     def _on_context_menu(self, pos):
         menu = QMenu(self)
-
         selected = self.get_selected_paths()
+        target_dir = self.get_target_directory_for_context()
+
+        new_folder_act = QAction("新建文件夹", self)
+        new_folder_act.setToolTip("在 ISO 中创建目录")
+        new_folder_iso_path = target_dir.rstrip("/") + "/"
+        new_folder_act.triggered.connect(
+            lambda: self._on_mkdir(new_folder_iso_path))
+        menu.addAction(new_folder_act)
+
         if selected:
+            menu.addSeparator()
+
             remove_act = QAction("删除", self)
             remove_act.triggered.connect(self._on_remove)
             menu.addAction(remove_act)
@@ -135,6 +159,12 @@ class IsoPanel(QWidget):
             menu.addAction(extract_act)
 
         menu.exec(self.tree.viewport().mapToGlobal(pos))
+
+    def _on_mkdir(self, parent_path):
+        name, ok = QInputDialog.getText(self, "新建文件夹", "文件夹名称:")
+        if ok and name:
+            new_path = parent_path.rstrip("/") + "/" + name
+            self.prepare_mkdir.emit(new_path)
 
     def _on_remove(self):
         for p in self.get_selected_paths():

@@ -4,6 +4,7 @@ class TaskType:
     UPDATE = "update"
     REMOVE = "remove"
     RMDIR = "rmdir"
+    MKDIR = "mkdir"
     RENAME = "rename"
     CHMOD = "chmod"
     EXTRACT = "extract"

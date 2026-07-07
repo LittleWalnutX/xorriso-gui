@@ -1,13 +1,20 @@
+import os
+
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView,
                                 QHeaderView, QPushButton, QFileDialog,
-                                QHBoxLayout, QToolButton)
+                                QHBoxLayout, QToolButton, QMenu, QInputDialog,
+                                QMessageBox)
 from PySide6.QtCore import Qt, Signal, QDir
 from PySide6.QtWidgets import QFileSystemModel
 from PySide6.QtGui import QAction
 
+from xorriso_gui.models.task_item import TaskItem, TaskType
+
 
 class DiskPanel(QWidget):
     path_changed = Signal(str)
+    add_to_iso = Signal(str, str)
+    open_terminal = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -24,7 +31,7 @@ class DiskPanel(QWidget):
         hdr.addStretch()
 
         up_btn = QToolButton()
-        up_btn.setText("⬆")
+        up_btn.setText("\u2b06")
         up_btn.setToolTip("向上一层")
         up_btn.clicked.connect(self._go_up)
         hdr.addWidget(up_btn)
@@ -54,6 +61,8 @@ class DiskPanel(QWidget):
         self.tree.setColumnHidden(1, True)
         self.tree.setColumnHidden(2, True)
         self.tree.setColumnHidden(3, True)
+        self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tree.customContextMenuRequested.connect(self._on_context_menu)
 
         header = self.tree.header()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
@@ -97,3 +106,56 @@ class DiskPanel(QWidget):
     def get_selected_names(self):
         indexes = self.tree.selectionModel().selectedRows()
         return [self._model.fileName(idx) for idx in indexes]
+
+    def _on_context_menu(self, pos):
+        menu = QMenu(self)
+        selected = self.get_selected_paths()
+        current_dir = self.get_current_path()
+
+        add_act = QAction("添加至 ISO", self)
+        add_act.setToolTip("将选中文件/目录加入任务队列")
+        add_act.triggered.connect(self._on_add_selected_to_iso)
+        menu.addAction(add_act)
+
+        menu.addSeparator()
+
+        new_folder_act = QAction("新建文件夹", self)
+        new_folder_act.triggered.connect(lambda: self._on_new_folder(current_dir))
+        menu.addAction(new_folder_act)
+
+        menu.addSeparator()
+
+        refresh_act = QAction("刷新", self)
+        refresh_act.triggered.connect(self._on_refresh)
+        menu.addAction(refresh_act)
+
+        open_there_act = QAction("在终端打开", self)
+        open_there_act.triggered.connect(lambda: self._on_open_terminal(current_dir))
+        menu.addAction(open_there_act)
+
+        menu.exec(self.tree.viewport().mapToGlobal(pos))
+
+    def _on_add_selected_to_iso(self):
+        for path in self.get_selected_paths():
+            name = os.path.basename(path)
+            self.add_to_iso.emit(path, "/" + name)
+
+    def _on_new_folder(self, parent_dir):
+        name, ok = QInputDialog.getText(self, "新建文件夹", "文件夹名称:")
+        if ok and name:
+            new_path = os.path.join(parent_dir, name)
+            try:
+                os.makedirs(new_path, exist_ok=True)
+                self._on_refresh()
+            except OSError as e:
+                QMessageBox.warning(self, "错误", f"无法创建文件夹:\n{e}")
+
+    def _on_refresh(self):
+        current = self.get_current_path()
+        old_index = self.tree.rootIndex()
+        self._model.setRootPath("")
+        self._model.setRootPath(current)
+        self.tree.setRootIndex(self._model.index(current))
+
+    def _on_open_terminal(self, path):
+        self.open_terminal.emit(path)
