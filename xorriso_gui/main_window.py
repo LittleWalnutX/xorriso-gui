@@ -206,6 +206,13 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage(f"正在加载 {path} ...")
         QApplication.processEvents()
 
+        if path.startswith("/dev/"):
+            self._set_disc_mode(True)
+            self.log_viewer.append_info("检测到设备路径，已自动开启续刻模式")
+        else:
+            self._set_disc_mode(False)
+            self.log_viewer.append_info("检测到文件路径，已自动关闭续刻模式")
+
         root, error = load_iso_contents(drive_path=path)
         if error:
             self.log_viewer.append_error(f"加载失败: {error}")
@@ -219,21 +226,23 @@ class MainWindow(QMainWindow):
         root = load_empty_iso()
         self.iso_panel.load_contents(root)
         self.drive_combo.setEditText("")
-        self.log_viewer.append_info("已创建新的空白 ISO 映像")
+        self._set_disc_mode(False)
+        self.log_viewer.append_info("已创建新的空白 ISO 映像（续刻模式已自动关闭）")
         self.status_bar.showMessage("新的空白 ISO 映像")
 
     def _toggle_disc_mode(self):
-        self._is_disc_mode = not self._is_disc_mode
-        if self._is_disc_mode:
+        self._set_disc_mode(not self._is_disc_mode)
+
+    def _set_disc_mode(self, enabled):
+        self._is_disc_mode = enabled
+        if enabled:
             self.disc_mode_btn.setText("续刻模式 ✓")
             self.disc_mode_btn.setStyleSheet(
                 "QPushButton { background-color: #e67e22; color: white; }"
             )
-            self.log_viewer.append_info("已启用续刻模式：输入和输出使用同一光盘（-dev）")
         else:
             self.disc_mode_btn.setText("续刻模式")
             self.disc_mode_btn.setStyleSheet("")
-            self.log_viewer.append_info("已退出续刻模式")
 
     def _on_add_to_iso(self, local_path, iso_path):
         task = TaskItem(TaskType.MAP, source=local_path, target=iso_path,
@@ -293,31 +302,36 @@ class MainWindow(QMainWindow):
         builder = TaskBuilder()
 
         input_drive = self.drive_combo.currentText().strip()
-        output_drive = self.output_combo.currentText().strip()
+        input_data = self.drive_combo.currentData()
+        if input_data:
+            input_drive = input_data
 
+        output_drive = self.output_combo.currentText().strip()
         output_data = self.output_combo.currentData()
         if output_data:
             output_drive = output_data
 
-        if self._is_disc_mode:
-            if not input_drive:
-                QMessageBox.warning(self, "错误", "续刻模式下必须指定一个光盘设备。")
-                return False
+        input_is_disc = input_drive.startswith("/dev/") if input_drive else False
+        output_is_disc = output_drive.startswith("/dev/") if output_drive else False
+
+        if self._is_disc_mode and input_is_disc and input_drive == output_drive:
             builder.set_same_drive(input_drive)
+        elif self._is_disc_mode and input_is_disc and not output_drive:
+            builder.set_same_drive(input_drive)
+        elif input_drive and output_drive and input_drive == output_drive and input_is_disc:
+            builder.set_same_drive(input_drive)
+        elif input_drive and output_drive:
+            builder.set_input_drive(input_drive)
+            builder.set_output_drive(output_drive)
+        elif input_drive and not output_drive:
+            QMessageBox.warning(self, "错误",
+                "请指定输出目标（设备路径或ISO文件路径）。")
+            return False
+        elif not input_drive and output_drive:
+            builder.set_output_drive(output_drive)
         else:
-            input_data = self.drive_combo.currentData()
-            if input_data:
-                input_drive = input_data
-
-            if input_drive:
-                builder.set_input_drive(input_drive)
-            if output_drive:
-                builder.set_output_drive(output_drive)
-                if not input_drive:
-                    builder.set_output_drive(output_drive)
-
-        if not output_drive and not input_drive:
-            QMessageBox.warning(self, "错误", "请指定输出目标（设备或ISO文件路径）。")
+            QMessageBox.warning(self, "错误",
+                "请指定输出目标（设备路径或ISO文件路径）。")
             return False
 
         args = builder.build_args(self._tasks)

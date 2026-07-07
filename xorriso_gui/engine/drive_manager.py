@@ -66,7 +66,7 @@ def scan_drives():
     try:
         result = subprocess.run(
             ["xorriso", "-device_links"],
-            capture_output=True, text=True, timeout=15
+            capture_output=True, text=True, timeout=5
         )
         drives = parse_device_links(result.stdout + result.stderr)
         return drives
