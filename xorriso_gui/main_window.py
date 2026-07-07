@@ -201,6 +201,7 @@ class MainWindow(QMainWindow):
         self.iso_panel.prepare_mkdir.connect(self._on_mkdir_in_iso)
         self.disk_panel.add_to_iso.connect(self._on_add_to_iso)
         self.disk_panel.open_terminal.connect(self._on_open_terminal)
+        self.disk_panel.load_iso_file.connect(self._on_load_iso_from_disk)
 
     def _init_statusbar(self):
         self.status_bar = QStatusBar()
@@ -404,6 +405,10 @@ class MainWindow(QMainWindow):
             subprocess.Popen(["xdg-open", path])
         except Exception:
             pass
+
+    def _on_load_iso_from_disk(self, path):
+        self.drive_combo.lineEdit().setText(path)
+        self._load_drive()
 
     def _on_burn_iso_dialog(self):
         dlg = BurnIsoDialog(self)

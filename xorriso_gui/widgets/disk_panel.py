@@ -15,6 +15,7 @@ class DiskPanel(QWidget):
     path_changed = Signal(str)
     add_to_iso = Signal(str, str)
     open_terminal = Signal(str)
+    load_iso_file = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -117,6 +118,13 @@ class DiskPanel(QWidget):
         add_act.triggered.connect(self._on_add_selected_to_iso)
         menu.addAction(add_act)
 
+        iso_files = [p for p in selected if p.lower().endswith(".iso")]
+        if iso_files:
+            open_iso_act = QAction("作为输入ISO镜像打开", self)
+            open_iso_act.setToolTip(f"加载 {os.path.basename(iso_files[0])} 到输入框")
+            open_iso_act.triggered.connect(lambda: self._on_open_as_iso(iso_files[0]))
+            menu.addAction(open_iso_act)
+
         menu.addSeparator()
 
         new_folder_act = QAction("新建文件夹", self)
@@ -139,6 +147,9 @@ class DiskPanel(QWidget):
         for path in self.get_selected_paths():
             name = os.path.basename(path)
             self.add_to_iso.emit(path, "/" + name)
+
+    def _on_open_as_iso(self, path):
+        self.load_iso_file.emit(path)
 
     def _on_new_folder(self, parent_dir):
         name, ok = QInputDialog.getText(self, "新建文件夹", "文件夹名称:")
