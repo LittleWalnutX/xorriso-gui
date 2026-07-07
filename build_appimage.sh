@@ -12,14 +12,12 @@ echo "Step 1: PyInstaller bundle (onedir)..."
 rm -rf "$BUILD_DIR"
 cd "$SCRIPT_DIR"
 
-pyinstaller \
+python3.14 -m PyInstaller \
     --onedir \
     --windowed \
     --name "$APP_NAME" \
     --add-data "xorriso_gui/assets:xorriso_gui/assets" \
-    --hidden-import="PySide6.QtCore" \
-    --hidden-import="PySide6.QtWidgets" \
-    --hidden-import="PySide6.QtGui" \
+    --collect-all "PySide6" \
     --distpath "$BUILD_DIR/dist" \
     --workpath "$BUILD_DIR/build" \
     -y \
