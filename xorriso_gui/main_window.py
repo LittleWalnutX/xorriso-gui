@@ -62,100 +62,105 @@ class MainWindow(QMainWindow):
         self._init_statusbar()
 
     def _init_toolbar(self, main_layout):
-        tb_layout = QHBoxLayout()
+        tb_wrapper = QVBoxLayout()
+        tb_wrapper.setSpacing(4)
 
-        tb_layout.addWidget(QLabel("输入驱动器/文件:"))
+        row1 = QHBoxLayout()
 
+        row1.addWidget(QLabel("输入驱动器/文件:"))
         self.drive_combo = QComboBox()
-        self.drive_combo.setMinimumWidth(250)
+        self.drive_combo.setMinimumWidth(200)
         self.drive_combo.setEditable(True)
         self.drive_combo.setToolTip("选择输入驱动器、ISO文件路径，或留空新建ISO")
-        tb_layout.addWidget(self.drive_combo)
+        row1.addWidget(self.drive_combo)
 
         self.refresh_btn = QPushButton("刷新")
         self.refresh_btn.clicked.connect(self._refresh_drives)
-        tb_layout.addWidget(self.refresh_btn)
+        row1.addWidget(self.refresh_btn)
 
         self.browse_btn = QPushButton("浏览...")
         self.browse_btn.clicked.connect(self._browse_iso)
-        tb_layout.addWidget(self.browse_btn)
+        row1.addWidget(self.browse_btn)
 
         self.load_btn = QPushButton("加载")
         self.load_btn.clicked.connect(self._load_drive)
-        tb_layout.addWidget(self.load_btn)
+        row1.addWidget(self.load_btn)
 
-        tb_layout.addSpacing(20)
+        row1.addSpacing(16)
 
-        tb_layout.addWidget(QLabel("输出到:"))
-
+        row1.addWidget(QLabel("输出到:"))
         self.output_combo = QComboBox()
         self.output_combo.setMinimumWidth(200)
         self.output_combo.setEditable(True)
         self.output_combo.setToolTip("输出目标（设备路径或ISO文件路径）")
-        tb_layout.addWidget(self.output_combo)
+        row1.addWidget(self.output_combo)
 
         self.new_iso_btn = QPushButton("新建空ISO")
         self.new_iso_btn.clicked.connect(self._new_empty_iso)
-        tb_layout.addWidget(self.new_iso_btn)
+        row1.addWidget(self.new_iso_btn)
 
         self.disc_mode_btn = QPushButton("续刻模式")
         self.disc_mode_btn.setToolTip("直接对光盘续刻（-dev模式）")
         self.disc_mode_btn.clicked.connect(self._toggle_disc_mode)
-        tb_layout.addWidget(self.disc_mode_btn)
+        row1.addWidget(self.disc_mode_btn)
 
         self.preview_btn = QPushButton("预览模式")
         self.preview_btn.setToolTip("在右侧面板中即时预览所有待执行操作的最终效果")
         self.preview_btn.clicked.connect(self._toggle_preview)
-        tb_layout.addWidget(self.preview_btn)
+        row1.addWidget(self.preview_btn)
 
-        tb_layout.addSpacing(8)
-        tb_layout.addWidget(QLabel("卷标:"))
+        row1.addSpacing(8)
+        row1.addWidget(QLabel("卷标:"))
         self.volume_id_edit = QLineEdit()
         self.volume_id_edit.setPlaceholderText("(可选)")
         self.volume_id_edit.setMaximumWidth(120)
         self.volume_id_edit.setToolTip("ISO 卷标名（Volume ID）")
-        tb_layout.addWidget(self.volume_id_edit)
+        row1.addWidget(self.volume_id_edit)
 
-        tb_layout.addSpacing(16)
+        row1.addStretch()
+        tb_wrapper.addLayout(row1)
+
+        row2 = QHBoxLayout()
 
         self.left_arrow_btn = QPushButton("←")
         self.left_arrow_btn.setToolTip("将右侧选中的文件提取到左侧当前目录")
         self.left_arrow_btn.setFixedWidth(32)
         self.left_arrow_btn.clicked.connect(self._on_transfer_left)
-        tb_layout.addWidget(self.left_arrow_btn)
+        row2.addWidget(self.left_arrow_btn)
 
         self.right_arrow_btn = QPushButton("→")
         self.right_arrow_btn.setToolTip("将左侧选中的文件添加到右侧当前目录")
         self.right_arrow_btn.setFixedWidth(32)
         self.right_arrow_btn.clicked.connect(self._on_transfer_right)
-        tb_layout.addWidget(self.right_arrow_btn)
+        row2.addWidget(self.right_arrow_btn)
 
         self.trash_btn = QPushButton("🗑")
         self.trash_btn.setToolTip("删除右侧选中的文件")
         self.trash_btn.setFixedWidth(32)
         self.trash_btn.clicked.connect(self._on_trash)
-        tb_layout.addWidget(self.trash_btn)
+        row2.addWidget(self.trash_btn)
 
-        tb_layout.addSpacing(16)
+        row2.addSpacing(8)
 
         self.burn_iso_btn = QPushButton("刻录ISO")
         self.burn_iso_btn.setToolTip("将已有的 .iso 文件刻录到光盘")
         self.burn_iso_btn.clicked.connect(self._on_burn_iso_dialog)
-        tb_layout.addWidget(self.burn_iso_btn)
+        row2.addWidget(self.burn_iso_btn)
 
         self.toc_btn = QPushButton("TOC")
         self.toc_btn.setToolTip("查看光盘的 Table of Contents 会话信息")
         self.toc_btn.clicked.connect(self._on_toc_dialog)
-        tb_layout.addWidget(self.toc_btn)
+        row2.addWidget(self.toc_btn)
 
         self.check_media_btn = QPushButton("检查介质")
         self.check_media_btn.setToolTip("扫描光盘介质检查损坏块")
         self.check_media_btn.clicked.connect(self._on_check_media)
-        tb_layout.addWidget(self.check_media_btn)
+        row2.addWidget(self.check_media_btn)
 
-        tb_layout.addStretch()
+        row2.addStretch()
+        tb_wrapper.addLayout(row2)
 
-        main_layout.addLayout(tb_layout)
+        main_layout.addLayout(tb_wrapper)
 
     def _init_main_content(self, main_layout):
         self.splitter = QSplitter(Qt.Horizontal)
