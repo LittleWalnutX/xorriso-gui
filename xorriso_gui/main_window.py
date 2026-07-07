@@ -229,6 +229,7 @@ class MainWindow(QMainWindow):
             self.iso_panel.load_contents(root)
             self.log_viewer.append_info(f"已加载: {path}")
             self.status_bar.showMessage(f"已加载: {path}")
+            self.output_combo.setEditText(path)
 
     def _new_empty_iso(self):
         root = load_empty_iso()
@@ -451,6 +452,8 @@ class MainWindow(QMainWindow):
         if exit_code == 0:
             self.log_viewer.append_success(f"执行成功 (exit code: {exit_code})")
             self.status_bar.showMessage("执行成功")
+            self._tasks.clear()
+            self.task_queue.clear_all()
             if not self._is_disc_mode:
                 QTimer.singleShot(500, self._reload_iso_after_commit)
         else:

@@ -35,7 +35,7 @@ class LogViewer(QPlainTextEdit):
 
     def append_stderr(self, text):
         from PySide6.QtGui import QColor
-        self.append_text(text, QColor("#e06c75"))
+        self.append_text(text, QColor("#d4d4d4"))
 
     def append_info(self, text):
         from PySide6.QtGui import QColor
