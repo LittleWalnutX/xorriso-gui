@@ -22,7 +22,7 @@ _TYPE_LABELS = {
 
 
 class TaskQueueWidget(QWidget):
-    task_removed = Signal(int)
+    task_removed = Signal(object)
     execute_requested = Signal()
     clear_requested = Signal()
 
@@ -82,6 +82,7 @@ class TaskQueueWidget(QWidget):
 
         type_item = QTableWidgetItem(_TYPE_LABELS.get(task.task_type, task.task_type))
         type_item.setFlags(type_item.flags() | Qt.ItemIsUserCheckable)
+        type_item.setData(Qt.UserRole, task)
         self.table.setItem(row, 0, type_item)
 
         self.table.setItem(row, 1, QTableWidgetItem(task.source))
@@ -115,8 +116,12 @@ class TaskQueueWidget(QWidget):
         self.clear_requested.emit()
 
     def _on_remove_selected(self):
-        rows = set()
+        rows_to_remove = []
         for idx in self.table.selectedIndexes():
-            rows.add(idx.row())
-        for row in sorted(rows, reverse=True):
+            if idx.row() not in rows_to_remove:
+                rows_to_remove.append(idx.row())
+                task = self.table.item(idx.row(), 0).data(Qt.UserRole)
+                if task:
+                    self.task_removed.emit(task)
+        for row in sorted(rows_to_remove, reverse=True):
             self.remove_task(row)

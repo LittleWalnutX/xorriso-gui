@@ -179,6 +179,7 @@ class MainWindow(QMainWindow):
         self.task_queue = TaskQueueWidget(self)
         self.task_queue.execute_requested.connect(self._on_execute_clicked)
         self.task_queue.clear_requested.connect(self._on_clear_tasks)
+        self.task_queue.task_removed.connect(self._on_task_removed)
 
         self.log_viewer = LogViewer(self)
 
@@ -450,6 +451,11 @@ class MainWindow(QMainWindow):
             self._tasks.clear()
             self.task_queue.clear_all()
             self.log_viewer.append_info("任务队列已清空")
+            self._refresh_display()
+
+    def _on_task_removed(self, task):
+        if task in self._tasks:
+            self._tasks.remove(task)
             self._refresh_display()
 
     def _on_execute_clicked(self):
