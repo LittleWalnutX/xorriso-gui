@@ -1,6 +1,6 @@
 from PySide6.QtCore import QThread, Signal
 
-from xorriso_gui.engine.drive_manager import scan_drives, get_media_space
+from xorriso_gui.engine.drive_manager import scan_drives, get_media_space, get_volume_id
 from xorriso_gui.engine.iso_reader import load_iso_contents
 
 
@@ -17,7 +17,7 @@ class ScanDrivesWorker(QThread):
 
 
 class LoadIsoWorker(QThread):
-    result = Signal(object, str)
+    result = Signal(object, str, str)
 
     def __init__(self, drive_path, parent=None):
         super().__init__(parent)
@@ -26,7 +26,8 @@ class LoadIsoWorker(QThread):
 
     def run(self):
         root, error = load_iso_contents(drive_path=self.drive_path)
-        self.result.emit(root, error)
+        volid = get_volume_id(self.drive_path) or ""
+        self.result.emit(root, error, volid)
 
 
 class MediaSpaceWorker(QThread):

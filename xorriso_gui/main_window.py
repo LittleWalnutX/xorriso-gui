@@ -268,7 +268,7 @@ class MainWindow(QMainWindow):
         self._load_worker.result.connect(self._on_iso_loaded)
         self._load_worker.start()
 
-    def _on_iso_loaded(self, root, error):
+    def _on_iso_loaded(self, root, error, volid):
         QApplication.restoreOverrideCursor()
         path = self._load_worker.drive_path
         if error:
@@ -280,6 +280,8 @@ class MainWindow(QMainWindow):
             self.log_viewer.append_info(f"已加载: {path}")
             self.status_bar.showMessage(f"已加载: {path}")
             self.output_combo.setEditText(path)
+            if volid:
+                self.volume_id_edit.setText(volid)
             self._update_media_space(path)
 
     def _new_empty_iso(self):
@@ -564,11 +566,13 @@ class MainWindow(QMainWindow):
             self._reload_worker.result.connect(self._on_reload_done)
             self._reload_worker.start()
 
-    def _on_reload_done(self, root, error):
+    def _on_reload_done(self, root, error, volid):
         if not error:
             self.iso_panel.load_contents(root)
             path = self._reload_worker.drive_path
             self.status_bar.showMessage(f"已重新加载: {path}")
+            if volid:
+                self.volume_id_edit.setText(volid)
             self._update_media_space(path)
         else:
             self.status_bar.showMessage(f"重新加载失败: {error}")

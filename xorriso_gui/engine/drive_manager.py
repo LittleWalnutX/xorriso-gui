@@ -114,3 +114,19 @@ def get_media_space(drive_path):
         return summary
     except Exception:
         return None
+
+
+def get_volume_id(drive_path):
+    try:
+        result = subprocess.run(
+            ["xorriso", "-dev", drive_path, "-tell_media_space"],
+            capture_output=True, text=True, timeout=30
+        )
+        output = result.stdout + result.stderr
+        for line in output.split("\n"):
+            if "Volume id" in line:
+                vid = line.split(":", 1)[-1].strip().strip("'")
+                return vid if vid else None
+        return None
+    except Exception:
+        return None
