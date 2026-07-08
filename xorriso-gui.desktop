@@ -2,8 +2,7 @@
 Type=Application
 Name=xorriso-gui
 Comment=Graphical frontend for xorriso ISO image manipulation
-Exec=python3 /home/walnut/Applications/xorriso-gui/main.py
-Icon=/home/walnut/Applications/xorriso-gui/xorriso_gui/assets/icon.svg
+Exec=xorriso-gui
+Icon=xorriso-gui
 Categories=Utility;DiscBurning;
 Terminal=false
-Path=/home/walnut/Applications/xorriso-gui
