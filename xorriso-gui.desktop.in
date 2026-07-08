@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=xorriso-gui
+Comment=Graphical frontend for xorriso ISO image manipulation
+Exec=python3 __PROJECT_DIR__/main.py
+Icon=__PROJECT_DIR__/xorriso_gui/assets/icon.svg
+Categories=Utility;DiscBurning;
+Terminal=false
+Path=__PROJECT_DIR__
