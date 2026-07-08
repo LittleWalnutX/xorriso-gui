@@ -376,6 +376,24 @@ class MainWindow(QMainWindow):
         self._refresh_display()
 
     def _on_remove_from_iso(self, iso_path):
+        cancelled = 0
+        for task in list(self._tasks):
+            if task.task_type in (TaskType.MAP, TaskType.ADD, TaskType.MKDIR) \
+                    and task.target == iso_path:
+                self._tasks.remove(task)
+                self._remove_task_from_queue(task)
+                cancelled += 1
+            elif task.task_type in (TaskType.MAP, TaskType.ADD, TaskType.MKDIR) \
+                    and task.target.startswith(iso_path.rstrip("/") + "/"):
+                self._tasks.remove(task)
+                self._remove_task_from_queue(task)
+                cancelled += 1
+        if cancelled:
+            self.log_viewer.append_info(
+                f"已取消 {cancelled} 个任务 (替代删除 {iso_path})")
+            self._refresh_display()
+            return
+
         task = TaskItem(TaskType.REMOVE, target=iso_path,
                         description=f"删除 {iso_path}")
         self._tasks.append(task)
@@ -383,7 +401,24 @@ class MainWindow(QMainWindow):
         self.log_viewer.append_info(f"已加入任务: -删除 {iso_path}")
         self._refresh_display()
 
+    def _remove_task_from_queue(self, task):
+        tbl = self.task_queue.table
+        for row in range(tbl.rowCount()):
+            item = tbl.item(row, 0)
+            if item and item.data(Qt.UserRole) is task:
+                tbl.removeRow(row)
+                break
+
     def _on_rename_in_iso(self, old_path, new_path):
+        for task in list(self._tasks):
+            if task.task_type in (TaskType.MAP, TaskType.ADD, TaskType.MKDIR) \
+                    and task.target == new_path:
+                self._tasks.remove(task)
+                self._remove_task_from_queue(task)
+                self.log_viewer.append_info(
+                    f"已取消之前的添加任务 (被重命名为 {new_path})")
+                break
+
         task = TaskItem(TaskType.RENAME, source=old_path, target=new_path,
                         description=f"重命名 {old_path} → {new_path}")
         self._tasks.append(task)
