@@ -7,14 +7,22 @@
 ## 安装
 
 ```bash
+# 解压后一键安装（自动安装依赖 + 生成桌面入口）
+./install.sh
+
+# 或手动安装
 pip install -r requirements.txt
-which xorriso         # 确保系统已安装 xorriso ≥ 1.5.0
+make install
 ```
+
+`install.sh` 会自动检测当前目录，生成正确的桌面文件路径，无需手动修改。
 
 ## 运行
 
 ```bash
 python3 main.py
+# 或
+make run
 ```
 
 ## 功能
