@@ -10,12 +10,14 @@
 # 解压后一键安装（自动安装依赖 + 生成桌面入口）
 ./install.sh
 
-# 或手动安装
-pip install -r requirements.txt
-make install
+# 或使用 Makefile
+make deps        # 仅安装 Python 依赖
+make install     # deps + 生成桌面文件并安装到 ~/.local/share/
+make uninstall   # 卸载桌面入口
+make clean       # 清理构建产物
 ```
 
-`install.sh` 会自动检测当前目录，生成正确的桌面文件路径，无需手动修改。
+`install.sh` 和 `make install` 从 `xorriso-gui.desktop.in` 模板生成桌面文件，自动填入当前目录路径，无需手动修改。
 
 ## 运行
 
@@ -138,16 +140,15 @@ make run
 ### 构建步骤
 
 ```bash
-# 1. 安装 PyInstaller
+# 方式 1: Makefile
+make appimage
+
+# 方式 2: 手动
 python3.14 -m pip install pyinstaller
-
-# 2. 构建
 ./build_appimage.sh
-
-# 3. 产出
-# AppDir:      build_appimage/xorriso-gui.AppDir/
-# AppImage:    build_appimage/xorriso-gui-YYYYMMDD-x86_64.AppImage
 ```
+
+产出: build_appimage/xorriso-gui-YYYYMMDD-x86_64.AppImage
 
 构建脚本会自动：
 1. `pyinstaller --onedir --collect-all PySide6` 打包 Python 应用
