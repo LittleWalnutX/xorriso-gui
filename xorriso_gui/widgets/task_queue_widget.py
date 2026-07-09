@@ -81,8 +81,15 @@ class TaskQueueWidget(QWidget):
         key = _TYPE_LABEL_KEYS.get(task_type, task_type)
         return tr(key, task_type)
 
+    def _update_header_labels(self):
+        from xorriso_gui.i18n import tr
+        self.table.setHorizontalHeaderLabels([
+            tr("table.action"), tr("table.source"), tr("table.target")
+        ])
+
     def _update_type_labels(self):
         from xorriso_gui.i18n import tr
+        self._update_header_labels()
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
             if item:

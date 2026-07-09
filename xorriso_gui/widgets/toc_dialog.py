@@ -4,12 +4,13 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
 from PySide6.QtCore import Qt, QThread, Signal
 
 from xorriso_gui.engine.drive_manager import scan_drives
+from xorriso_gui.i18n import tr
 
 
 class TocDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("光盘 TOC (Table of Contents)")
+        self.setWindowTitle(tr("toc.title"))
         self.resize(550, 400)
         self._init_ui()
         self._refresh_drives()
@@ -18,21 +19,25 @@ class TocDialog(QDialog):
         layout = QVBoxLayout(self)
 
         drive_layout = QHBoxLayout()
-        drive_layout.addWidget(QLabel("驱动器:"))
+        drive_layout.addWidget(QLabel(tr("toc.drive_label")))
         self.drive_combo = QComboBox()
         self.drive_combo.setEditable(True)
         self.drive_combo.setMinimumWidth(250)
         drive_layout.addWidget(self.drive_combo)
-        refresh_btn = QPushButton("刷新")
+        refresh_btn = QPushButton(tr("btn.refresh"))
         refresh_btn.clicked.connect(self._refresh_drives)
         drive_layout.addWidget(refresh_btn)
-        show_btn = QPushButton("显示 TOC")
+        show_btn = QPushButton(tr("toc.show_btn"))
         show_btn.clicked.connect(self._show_toc)
         drive_layout.addWidget(show_btn)
         layout.addLayout(drive_layout)
 
         self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["Session", "LBA", "Blocks", "Size", "Volume ID"])
+        self.table.setHorizontalHeaderLabels([
+            tr("toc.session_col"), tr("toc.lba_col"),
+            tr("toc.blocks_col"), tr("toc.size_col"),
+            tr("toc.volid_col")
+        ])
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -44,7 +49,7 @@ class TocDialog(QDialog):
 
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
-        close_btn = QPushButton("关闭")
+        close_btn = QPushButton(tr("confirm.cancel"))
         close_btn.clicked.connect(self.accept)
         btn_layout.addWidget(close_btn)
         layout.addLayout(btn_layout)
@@ -69,9 +74,9 @@ class TocDialog(QDialog):
     def _show_toc(self):
         drive = self._resolve_drive()
         if not drive:
-            QMessageBox.warning(self, "错误", "请选择驱动器。")
+            QMessageBox.warning(self, "Error", tr("error.select_drive"))
             return
-        self.status_label.setText(f"正在读取 {drive} ...")
+        self.status_label.setText(tr("status.loading").format(path=drive))
         self._worker = _TocWorker(drive, self)
         self._worker.finished.connect(lambda out, sp: self._on_toc_loaded(out, sp, drive))
         self._worker.start()

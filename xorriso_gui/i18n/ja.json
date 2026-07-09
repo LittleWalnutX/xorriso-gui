@@ -132,5 +132,8 @@
     "tree.permissions": "権限",
     "tree.date": "日付",
     "placeholder.empty_dir": "——（空フォルダ）——",
-    "tooltip.create_dir_in_iso": "ISO 内にディレクトリを作成"
+    "tooltip.create_dir_in_iso": "ISO 内にディレクトリを作成",
+    "table.action": "操作",
+    "table.source": "ソース",
+    "table.target": "ターゲット"
 }

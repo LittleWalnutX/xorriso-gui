@@ -19,7 +19,6 @@
     "tooltip.toc": "查看光盘的 Table of Contents 会话信息",
     "tooltip.check_media": "扫描光盘介质检查损坏块",
     "tooltip.create_dir_in_iso": "在 ISO 中创建目录",
-
     "btn.refresh": "刷新",
     "btn.browse": "浏览...",
     "btn.load": "加载",
@@ -34,12 +33,9 @@
     "btn.execute": "▶ 执行",
     "btn.remove_selected": "移除选中",
     "btn.clear_all": "清空",
-
     "placeholder.volume_id": "(可选)",
-
     "panel.disk_filesystem": "磁盘文件系统",
     "panel.iso_contents": "ISO 映像 / 光盘内容",
-
     "menu.add_to_iso": "添加至 ISO",
     "menu.add_to_iso_tip": "将选中文件/目录加入任务队列",
     "menu.open_as_iso": "作为输入ISO镜像打开",
@@ -51,7 +47,6 @@
     "menu.rename": "重命名",
     "menu.extract": "提取到磁盘...",
     "menu.go_up": "向上一层",
-
     "dialog.new_folder": "新建文件夹",
     "dialog.folder_name": "文件夹名称:",
     "dialog.rename": "重命名",
@@ -61,12 +56,10 @@
     "dialog.select_iso": "选择 ISO 镜像文件",
     "dialog.confirm_clear": "确认清空",
     "dialog.confirm_clear_text": "确定要清空所有任务吗？",
-
     "confirm.title": "确认执行 xorriso 命令",
     "confirm.text": "即将执行以下 xorriso 命令：",
     "confirm.run": "▶ 执行",
     "confirm.cancel": "取消",
-
     "burn.title": "刻录 ISO 镜像到光盘",
     "burn.iso_group": "ISO 镜像文件",
     "burn.drive_group": "目标光盘驱动器",
@@ -76,7 +69,6 @@
     "burn.confirm_text": "即将刻录 ISO 到 {drive}：",
     "burn.burn_btn": "▶ 刻录",
     "burn.select_iso": "选择 .iso 文件...",
-
     "toc.title": "光盘 TOC (Table of Contents)",
     "toc.drive_label": "驱动器:",
     "toc.show_btn": "显示 TOC",
@@ -85,7 +77,6 @@
     "toc.blocks_col": "Blocks",
     "toc.size_col": "Size",
     "toc.volid_col": "Volume ID",
-
     "error.select_drive": "请选择驱动器。",
     "error.select_iso": "请选择 ISO 镜像文件。",
     "error.select_target": "请选择目标驱动器。",
@@ -94,11 +85,9 @@
     "error.disc_mode_need_drive": "续刻模式下必须指定一个光盘设备。",
     "error.load_failed": "加载失败: {msg}",
     "error.reload_failed": "重新加载失败: {msg}",
-
     "check_media.title": "检查介质",
     "check_media.text": "即将对 {drive} 进行介质检查（最长30分钟）",
     "check_media.start": "▶ 开始检查",
-
     "status.ready": "就绪",
     "status.scanning": "扫描驱动器...",
     "status.found": "发现 {count} 个驱动器",
@@ -112,7 +101,6 @@
     "status.checking": "正在检查介质 ...",
     "status.success": "执行成功",
     "status.failed": "执行失败, exit code: {code}",
-
     "log.device_path_disc": "检测到设备路径，已自动开启续刻模式",
     "log.file_path_iso": "检测到文件路径，已自动关闭续刻模式",
     "log.new_iso_preview": "已创建新的空白 ISO 映像（已自动开启预览模式）",
@@ -127,7 +115,6 @@
     "log.exec_command": "执行命令: {cmd}",
     "log.exec_success": "执行成功 (exit code: {code})",
     "log.exec_failed": "执行失败 (exit code: {code})",
-
     "task.type_add": "添加",
     "task.type_map": "映射",
     "task.type_update": "更新",
@@ -138,16 +125,15 @@
     "task.type_extract": "提取",
     "task.type_blank": "格式化",
     "task.type_info": "信息",
-
     "tab.tasks": "任务队列",
     "tab.log": "日志输出",
-
     "iso_filter": "ISO 镜像 (*.iso *.ISO);;所有文件 (*)",
-
     "tree.name": "名称",
     "tree.size": "大小",
     "tree.permissions": "权限",
     "tree.date": "日期",
-
-    "placeholder.empty_dir": "——（空文件夹）——"
+    "placeholder.empty_dir": "——（空文件夹）——",
+    "table.action": "操作",
+    "table.source": "源",
+    "table.target": "目标"
 }

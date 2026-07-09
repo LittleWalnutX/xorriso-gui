@@ -132,5 +132,8 @@
     "tree.permissions": "Permissions",
     "tree.date": "Date",
     "placeholder.empty_dir": "—— (empty folder) ——",
-    "tooltip.create_dir_in_iso": "Create directory in ISO"
+    "tooltip.create_dir_in_iso": "Create directory in ISO",
+    "table.action": "Action",
+    "table.source": "Source",
+    "table.target": "Target"
 }

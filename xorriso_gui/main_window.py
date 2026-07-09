@@ -69,7 +69,8 @@ class MainWindow(QMainWindow):
         row1 = QHBoxLayout()
         row1.addStretch()
 
-        row1.addWidget(QLabel("输入驱动器/文件:"))
+        self.input_label = QLabel("输入驱动器/文件:")
+        row1.addWidget(self.input_label)
         self.drive_combo = QComboBox()
         self.drive_combo.setMinimumWidth(150)
         self.drive_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -91,7 +92,8 @@ class MainWindow(QMainWindow):
 
         row1.addSpacing(16)
 
-        row1.addWidget(QLabel("输出到:"))
+        self.output_label = QLabel("输出到:")
+        row1.addWidget(self.output_label)
         self.output_combo = QComboBox()
         self.output_combo.setMinimumWidth(150)
         self.output_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -138,7 +140,8 @@ class MainWindow(QMainWindow):
         row2.addWidget(self.trash_btn)
 
         row2.addSpacing(16)
-        row2.addWidget(QLabel("卷标:"))
+        self.volume_label = QLabel("卷标:")
+        row2.addWidget(self.volume_label)
         self.volume_id_edit = QLineEdit()
         self.volume_id_edit.setPlaceholderText("(可选)")
         self.volume_id_edit.setMaximumWidth(180)
@@ -388,6 +391,10 @@ class MainWindow(QMainWindow):
 
     def _apply_translations(self):
         self.setWindowTitle(tr("window.title"))
+
+        self.input_label.setText(tr("label.input_drive"))
+        self.output_label.setText(tr("label.output_to"))
+        self.volume_label.setText(tr("label.volume_id"))
 
         self.browse_btn.setText(tr("btn.browse"))
         self.browse_btn.setToolTip(tr("tooltip.browse"))
