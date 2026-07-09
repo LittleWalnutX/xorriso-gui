@@ -513,11 +513,16 @@ class MainWindow(QMainWindow):
         self._refresh_display()
 
     def _on_extract_from_iso(self, iso_path, dest_path):
-        task = TaskItem(TaskType.EXTRACT, source=iso_path, target=dest_path,
-                        description=f"提取 {iso_path} → {dest_path}")
+        if os.path.isdir(dest_path):
+            fname = os.path.basename(iso_path.rstrip("/"))
+            target = os.path.join(dest_path, fname)
+        else:
+            target = dest_path
+        task = TaskItem(TaskType.EXTRACT, source=iso_path, target=target,
+                        description=f"提取 {iso_path} → {target}")
         self._tasks.append(task)
         self.task_queue.add_task(task)
-        self.log_viewer.append_info(tr("log.task_extract").format(src=iso_path, dst=dest_path))
+        self.log_viewer.append_info(tr("log.task_extract").format(src=iso_path, dst=target))
         self._refresh_display()
 
     def _on_mkdir_in_iso(self, iso_path):

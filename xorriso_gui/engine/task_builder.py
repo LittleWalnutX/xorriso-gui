@@ -117,12 +117,13 @@ class TaskBuilder:
                 args.extend(["-extract", src, dst])
 
         has_changes = bool(group_add or group_map or group_update or group_rm
-                           or group_mv or group_mkdir or group_chmod or group_extract)
+                           or group_mv or group_mkdir or group_chmod)
 
-        if not has_changes:
+        if not has_changes and not group_extract:
             args.extend(["-changes_pending", "yes"])
 
-        args.append("-commit")
+        if not group_extract:
+            args.append("-commit")
 
         return args
 
