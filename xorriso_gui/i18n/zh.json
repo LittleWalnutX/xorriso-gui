@@ -152,5 +152,8 @@
     "mount.single_session": "单会话光盘。",
     "btn.mount": "挂载",
     "mount.auth_failed": "验证失败，密码错误或已拒绝。",
-    "mount.no_elevator": "未找到图形化提权工具 (pkexec/kdesu/gksudo)。"
+    "mount.no_elevator": "未找到可用提权工具（已尝试: {tried}）。请安装 pkexec、kdesu 或 gksudo。",
+    "mount.title": "挂载光盘",
+    "mount.drive": "驱动器",
+    "mount.trying": "正在尝试 {tool}..."
 }

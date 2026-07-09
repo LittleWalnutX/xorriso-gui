@@ -152,5 +152,8 @@
     "mount.single_session": "Single session disc.",
     "btn.mount": "Mount",
     "mount.auth_failed": "Authentication failed. Incorrect password or denied.",
-    "mount.no_elevator": "No graphical privilege tool found (pkexec/kdesu/gksudo)."
+    "mount.no_elevator": "No privilege tool available (tried: {tried}). Install pkexec, kdesu, or gksudo.",
+    "mount.title": "Mount Disc",
+    "mount.drive": "Drive",
+    "mount.trying": "Trying {tool}..."
 }

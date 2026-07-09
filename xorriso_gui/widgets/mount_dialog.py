@@ -2,7 +2,7 @@ import subprocess
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                                 QLabel, QLineEdit, QSpinBox, QCheckBox,
-                                QMessageBox, QApplication)
+                                QMessageBox, QApplication, QComboBox)
 from PySide6.QtCore import Qt, QThread, Signal
 
 from xorriso_gui.i18n import tr
@@ -12,15 +12,23 @@ class MountDialog(QDialog):
     def __init__(self, drive_path="/dev/cdrom", parent=None):
         super().__init__(parent)
         self.drive_path = drive_path
-        self.setWindowTitle("挂载光盘")
-        self.resize(450, 250)
+        self.setWindowTitle(tr("mount.title"))
+        self.resize(480, 280)
         self._init_ui()
         self._load_sessions()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
 
-        layout.addWidget(QLabel(tr("mount.label").format(drive=self.drive_path)))
+        dl = QHBoxLayout()
+        dl.addWidget(QLabel(tr("mount.drive") + ":"))
+        self.drive_combo = QComboBox()
+        self.drive_combo.setEditable(True)
+        self.drive_combo.setMinimumWidth(250)
+        if self.drive_path:
+            self.drive_combo.setEditText(self.drive_path)
+        dl.addWidget(self.drive_combo)
+        layout.addLayout(dl)
 
         fl = QHBoxLayout()
         fl.addWidget(QLabel(tr("mount.session") + ":"))
@@ -44,6 +52,7 @@ class MountDialog(QDialog):
 
         self.info_label = QLabel("")
         self.info_label.setStyleSheet("color: #61afef;")
+        self.info_label.setWordWrap(True)
         layout.addWidget(self.info_label)
 
         layout.addStretch()
@@ -64,7 +73,19 @@ class MountDialog(QDialog):
         bl.addWidget(cancel_btn)
         layout.addLayout(bl)
 
+    def _resolve_drive(self):
+        line_edit = self.drive_combo.lineEdit()
+        text = line_edit.text().strip() if line_edit else ""
+        for i in range(self.drive_combo.count()):
+            if self.drive_combo.itemText(i) == text:
+                data = self.drive_combo.itemData(i)
+                if data:
+                    return data
+                break
+        return text
+
     def _build_command(self):
+        drive = self._resolve_drive() or self.drive_path
         session = self.session_spin.value()
         opts = []
         if self.ro_check.isChecked():
@@ -73,7 +94,7 @@ class MountDialog(QDialog):
             opts.append(f"session={session}")
         mount_pt = self.mount_edit.text().strip()
         opt_str = f"-o {','.join(opts)}" if opts else ""
-        return f"mount -t iso9660 {opt_str} '{self.drive_path}' '{mount_pt}'".replace("  ", " ")
+        return f"mount -t iso9660 {opt_str} '{drive}' '{mount_pt}'".replace("  ", " ")
 
     def _on_copy(self):
         cmd = self._build_command()
@@ -81,6 +102,7 @@ class MountDialog(QDialog):
         self.info_label.setText(tr("mount.copied"))
 
     def _on_execute(self):
+        drive = self._resolve_drive() or self.drive_path
         cmd = self._build_command()
         mount_pt = self.mount_edit.text().strip()
         session = self.session_spin.value()
@@ -102,11 +124,12 @@ class MountDialog(QDialog):
         if session > 1:
             opts.append(f"session={session}")
         full_opts = ",".join(opts) if opts else "ro"
-        mount_args = ["mount", "-t", "iso9660", "-o", full_opts,
-                       self.drive_path, mount_pt]
+        mount_args = ["mount", "-t", "iso9660", "-o", full_opts, drive, mount_pt]
 
         for elevator in ["pkexec", "kdesu", "gksudo", "gksu"]:
             try:
+                self.info_label.setText(tr("mount.trying").format(tool=elevator))
+                QApplication.processEvents()
                 result = subprocess.run([elevator] + mount_args,
                                         capture_output=True, text=True, timeout=60)
                 if result.returncode == 0:
@@ -122,7 +145,10 @@ class MountDialog(QDialog):
         self.info_label.setText(tr("mount.no_elevator"))
 
     def _load_sessions(self):
-        self._worker = _SessionWorker(self.drive_path, self)
+        drive = self._resolve_drive() or self.drive_path
+        if not drive:
+            return
+        self._worker = _SessionWorker(drive, self)
         self._worker.result.connect(self._on_sessions_loaded)
         self._worker.start()
 
