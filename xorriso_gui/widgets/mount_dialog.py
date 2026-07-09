@@ -13,6 +13,7 @@ class MountDialog(QDialog):
     def __init__(self, drive_path="/dev/cdrom", parent=None):
         super().__init__(parent)
         self.drive_path = drive_path
+        self._sessions = {}
         self.setWindowTitle(tr("mount.title"))
         self.resize(480, 280)
         self._init_ui()
@@ -152,7 +153,9 @@ class MountDialog(QDialog):
         self._worker.result.connect(self._on_sessions_loaded)
         self._worker.start()
 
-    def _on_sessions_loaded(self, count):
+    def _on_sessions_loaded(self, sessions):
+        self._sessions = {num: lba for num, lba in sessions}
+        count = len(sessions)
         if count > 1:
             self.session_spin.setMaximum(count)
             self.session_spin.setValue(count)
@@ -160,9 +163,78 @@ class MountDialog(QDialog):
         else:
             self.info_label.setText(tr("mount.single_session"))
 
+    def _build_command(self):
+        drive = self._resolve_drive() or self.drive_path
+        session = self.session_spin.value()
+        ro = "ro" if self.ro_check.isChecked() else "rw"
+        mount_pt = self.mount_edit.text().strip()
+        lba = self._sessions.get(session)
+        if lba and session > 1:
+            return f"mount -t iso9660 -o {ro},sbsector={lba} '{drive}' '{mount_pt}'"
+        else:
+            return f"mount -t iso9660 -o {ro} '{drive}' '{mount_pt}'"
+
+    def _on_copy(self):
+        cmd = self._build_command()
+        QApplication.clipboard().setText(cmd)
+        self.info_label.setText(tr("mount.copied"))
+
+    def _on_execute(self):
+        drive = self._resolve_drive() or self.drive_path
+        cmd = self._build_command()
+        mount_pt = self.mount_edit.text().strip()
+        session = self.session_spin.value()
+
+        try:
+            os.makedirs(mount_pt, exist_ok=True)
+        except (PermissionError, OSError):
+            pass
+
+        reply = QMessageBox.question(
+            self, tr("mount.confirm_title"),
+            tr("mount.confirm_text").format(cmd=cmd),
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        ro = "ro" if self.ro_check.isChecked() else "rw"
+        lba = self._sessions.get(session)
+        if lba and session > 1:
+            opts = f"{ro},sbsector={lba}"
+        else:
+            opts = ro
+        mount_args = ["mount", "-t", "iso9660", "-o", opts, drive, mount_pt]
+
+        found_elevator = False
+        for elevator in ["pkexec", "kdesu", "gksudo", "gksu"]:
+            try:
+                found_elevator = True
+                self.info_label.setText(tr("mount.trying").format(tool=elevator))
+                QApplication.processEvents()
+                result = subprocess.run([elevator] + mount_args,
+                                        capture_output=True, text=True, timeout=60)
+                if result.returncode == 0:
+                    self.info_label.setText(tr("mount.success").format(pt=mount_pt))
+                    return
+                else:
+                    err = (result.stderr + result.stdout).strip()
+                    if err:
+                        self.info_label.setText(tr("mount.failed").format(err=err[:200]))
+                    else:
+                        self.info_label.setText(tr("mount.failed").format(err=f"exit code {result.returncode}"))
+                    return
+            except FileNotFoundError:
+                continue
+
+        if found_elevator:
+            self.info_label.setText(tr("mount.failed").format(err="all elevators failed"))
+        else:
+            self.info_label.setText(tr("mount.no_elevator"))
+
 
 class _SessionWorker(QThread):
-    result = Signal(int)
+    result = Signal(list)
 
     def __init__(self, drive, parent=None):
         super().__init__(parent)
@@ -170,15 +242,21 @@ class _SessionWorker(QThread):
         self.finished.connect(self.deleteLater)
 
     def run(self):
+        sessions = []
         try:
             r = subprocess.run(
                 ["xorriso", "-dev", self.drive, "-toc"],
                 capture_output=True, text=True, timeout=30
             )
-            count = 0
             for line in (r.stdout + r.stderr).split("\n"):
                 if "ISO session" in line:
-                    count += 1
-            self.result.emit(count)
+                    parts = [p.strip() for p in line.split(",")]
+                    try:
+                        prefix, num = parts[0].rsplit(None, 1)
+                        lba = int(parts[1].rstrip("s"))
+                        sessions.append((int(num), lba))
+                    except (ValueError, IndexError):
+                        continue
         except Exception:
-            self.result.emit(1)
+            pass
+        self.result.emit(sessions)
