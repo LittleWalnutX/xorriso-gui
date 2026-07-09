@@ -21,7 +21,7 @@ def main():
         app.setWindowIcon(QIcon(_ICON_PATH))
 
     load_translations()
-    set_language("ja")
+    set_language("zh")
 
     style_sheet = """
     QTreeView {

@@ -113,12 +113,6 @@ class MainWindow(QMainWindow):
         self.preview_btn.clicked.connect(self._toggle_preview)
         row1.addWidget(self.preview_btn)
 
-        self.lang_btn = QPushButton("🌐")
-        self.lang_btn.setFixedWidth(32)
-        self.lang_btn.setToolTip("Switch language / 言語切替")
-        self.lang_btn.clicked.connect(self._toggle_language)
-        row1.addWidget(self.lang_btn)
-
         row1.addStretch()
         tb_wrapper.addLayout(row1)
 
@@ -150,6 +144,17 @@ class MainWindow(QMainWindow):
         self.volume_id_edit.setMaximumWidth(180)
         self.volume_id_edit.setToolTip("ISO 卷标名（Volume ID）")
         row2.addWidget(self.volume_id_edit)
+
+        row2.addSpacing(16)
+
+        self.lang_combo = QComboBox()
+        self.lang_combo.setMaximumWidth(70)
+        self.lang_combo.setToolTip("界面语言 / Language")
+        self.lang_combo.addItem("中文", "zh")
+        self.lang_combo.addItem("English", "en")
+        self.lang_combo.addItem("日本語", "ja")
+        self.lang_combo.currentIndexChanged.connect(self._on_language_changed)
+        row2.addWidget(self.lang_combo)
 
         row2.addSpacing(16)
 
@@ -374,13 +379,12 @@ class MainWindow(QMainWindow):
         elif task.task_type == TaskType.RENAME:
             _rename_node_in_tree(root, task.source, task.target)
 
-    def _toggle_language(self):
-        langs = languages()
-        current = get_language()
-        next_lang = langs[(langs.index(current) + 1) % len(langs)] if langs else "en"
-        set_language(next_lang)
-        self._apply_translations()
-        self._refresh_display()
+    def _on_language_changed(self, index):
+        lang = self.lang_combo.itemData(index)
+        if lang:
+            set_language(lang)
+            self._apply_translations()
+            self._refresh_display()
 
     def _apply_translations(self):
         self.setWindowTitle(tr("window.title"))
@@ -430,6 +434,14 @@ class MainWindow(QMainWindow):
         self.iso_panel.path_label.setText(tr("panel.iso_contents"))
 
         self.task_queue._update_type_labels()
+
+        self.lang_combo.blockSignals(True)
+        current = get_language()
+        for i in range(self.lang_combo.count()):
+            if self.lang_combo.itemData(i) == current:
+                self.lang_combo.setCurrentIndex(i)
+                break
+        self.lang_combo.blockSignals(False)
 
         if not self.status_bar.currentMessage():
             self.status_bar.showMessage(tr("status.ready"))

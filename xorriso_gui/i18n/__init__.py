@@ -2,13 +2,13 @@ import json
 import os
 
 _translations = {}
-_current = "en"
+_current = "zh"
 
 
 def load_translations():
     global _translations
     base = os.path.dirname(__file__)
-    for lang in ("en", "ja"):
+    for lang in ("zh", "en", "ja"):
         path = os.path.join(base, f"{lang}.json")
         if os.path.exists(path):
             with open(path, encoding="utf-8") as f:
