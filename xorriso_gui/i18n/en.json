@@ -155,5 +155,6 @@
     "mount.no_elevator": "No privilege tool available (tried: {tried}). Install pkexec, kdesu, or gksudo.",
     "mount.title": "Mount Disc",
     "mount.drive": "Drive",
-    "mount.trying": "Trying {tool}..."
+    "mount.trying": "Trying {tool}...",
+    "mount.session_hint": "1 = latest (default), >1 uses xorriso for old sessions"
 }

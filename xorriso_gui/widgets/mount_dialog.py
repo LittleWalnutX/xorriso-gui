@@ -88,14 +88,12 @@ class MountDialog(QDialog):
     def _build_command(self):
         drive = self._resolve_drive() or self.drive_path
         session = self.session_spin.value()
-        opts = []
-        if self.ro_check.isChecked():
-            opts.append("ro")
-        if session > 1:
-            opts.append(f"session={session}")
+        ro = "ro" if self.ro_check.isChecked() else "rw"
         mount_pt = self.mount_edit.text().strip()
-        opt_str = f"-o {','.join(opts)}" if opts else ""
-        return f"mount -t iso9660 {opt_str} '{drive}' '{mount_pt}'".replace("  ", " ")
+        if session > 1:
+            return f"xorriso -dev '{drive}' -osirrox on -mount '{drive}' {session} '{mount_pt}'"
+        else:
+            return f"mount -t iso9660 -o {ro} '{drive}' '{mount_pt}'"
 
     def _on_copy(self):
         cmd = self._build_command()
@@ -121,13 +119,12 @@ class MountDialog(QDialog):
         if reply != QMessageBox.Yes:
             return
 
-        opts = []
-        if self.ro_check.isChecked():
-            opts.append("ro")
         if session > 1:
-            opts.append(f"session={session}")
-        full_opts = ",".join(opts) if opts else "ro"
-        mount_args = ["mount", "-t", "iso9660", "-o", full_opts, drive, mount_pt]
+            mount_args = ["xorriso", "-dev", drive, "-osirrox", "on",
+                          "-mount", drive, str(session), mount_pt]
+        else:
+            ro = "ro" if self.ro_check.isChecked() else "rw"
+            mount_args = ["mount", "-t", "iso9660", "-o", ro, drive, mount_pt]
 
         for elevator in ["pkexec", "kdesu", "gksudo", "gksu"]:
             try:

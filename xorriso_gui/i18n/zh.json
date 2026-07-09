@@ -155,5 +155,6 @@
     "mount.no_elevator": "未找到可用提权工具（已尝试: {tried}）。请安装 pkexec、kdesu 或 gksudo。",
     "mount.title": "挂载光盘",
     "mount.drive": "驱动器",
-    "mount.trying": "正在尝试 {tool}..."
+    "mount.trying": "正在尝试 {tool}...",
+    "mount.session_hint": "session=1 为最新（默认），>1 用 xorriso 挂载旧 session"
 }

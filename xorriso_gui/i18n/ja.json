@@ -155,5 +155,6 @@
     "mount.no_elevator": "利用可能な権限昇格ツールがありません（試行: {tried}）。pkexec、kdesu、gksudo をインストールしてください。",
     "mount.title": "ディスクのマウント",
     "mount.drive": "ドライブ",
-    "mount.trying": "{tool} を試行中..."
+    "mount.trying": "{tool} を試行中...",
+    "mount.session_hint": "1 = 最新（デフォルト）、>1 は xorriso で旧セッションをマウント"
 }
