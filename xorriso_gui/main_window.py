@@ -20,6 +20,7 @@ from xorriso_gui.widgets.task_queue_widget import TaskQueueWidget
 from xorriso_gui.widgets.log_viewer import LogViewer
 from xorriso_gui.widgets.burn_iso_dialog import BurnIsoDialog
 from xorriso_gui.widgets.toc_dialog import TocDialog
+from xorriso_gui.widgets.mount_dialog import MountDialog
 from xorriso_gui.i18n import tr, set_language, languages, get_language
 
 
@@ -171,10 +172,15 @@ class MainWindow(QMainWindow):
         self.toc_btn.clicked.connect(self._on_toc_dialog)
         row2.addWidget(self.toc_btn)
 
-        self.check_media_btn = QPushButton(tr("check_media.title"))
+        self.check_media_btn = QPushButton(tr("btn.check_media"))
         self.check_media_btn.setToolTip("扫描光盘介质检查损坏块")
         self.check_media_btn.clicked.connect(self._on_check_media)
         row2.addWidget(self.check_media_btn)
+
+        self.mount_btn = QPushButton(tr("btn.mount"))
+        self.mount_btn.setToolTip(tr("mount.label").format(drive=""))
+        self.mount_btn.clicked.connect(self._on_mount_dialog)
+        row2.addWidget(self.mount_btn)
 
         row2.addStretch()
         tb_wrapper.addLayout(row2)
@@ -212,6 +218,13 @@ class MainWindow(QMainWindow):
         bottom_splitter.setMaximumHeight(220)
 
         main_layout.addWidget(bottom_splitter, stretch=0)
+
+        from PySide6.QtWidgets import QProgressBar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 0)
+        self.progress_bar.setMaximumHeight(18)
+        self.progress_bar.setVisible(False)
+        main_layout.addWidget(self.progress_bar)
 
     def _connect_panel_signals(self):
         self.iso_panel.prepare_add.connect(self._on_add_to_iso)
@@ -429,6 +442,9 @@ class MainWindow(QMainWindow):
         self.check_media_btn.setText(tr("btn.check_media"))
         self.check_media_btn.setToolTip(tr("tooltip.check_media"))
 
+        self.mount_btn.setText(tr("btn.mount"))
+        self.mount_btn.setToolTip(tr("mount.execute"))
+
         self.task_queue.title_label.setText(tr("tab.tasks"))
         self.task_queue.clear_btn.setText(tr("btn.clear_all"))
         self.task_queue.remove_btn.setText(tr("btn.remove_selected"))
@@ -552,6 +568,15 @@ class MainWindow(QMainWindow):
         dlg = TocDialog(self)
         dlg.exec()
 
+    def _on_mount_dialog(self):
+        drive = _resolve_combo_path(self.drive_combo)
+        if not drive or not drive.startswith("/dev/"):
+            drive = _resolve_combo_path(self.output_combo)
+        if not drive or not drive.startswith("/dev/"):
+            drive = "/dev/cdrom"
+        dlg = MountDialog(drive, self)
+        dlg.exec()
+
     def _on_check_media(self):
         drive = _resolve_combo_path(self.drive_combo)
         if not drive or not drive.startswith("/dev/"):
@@ -659,6 +684,7 @@ class MainWindow(QMainWindow):
         self.log_viewer.append_info(tr("log.exec_command").format(cmd=display))
         self.log_viewer.append_info("=" * 60)
         self.status_bar.showMessage(tr("status.executing"))
+        self.progress_bar.setVisible(True)
         QApplication.processEvents()
         self._xorriso.run(args)
 
@@ -667,6 +693,7 @@ class MainWindow(QMainWindow):
         self.log_viewer.append_info(tr("log.exec_command").format(cmd=display))
         self.log_viewer.append_info("=" * 60)
         self.status_bar.showMessage(tr("status.executing"))
+        self.progress_bar.setVisible(True)
         QApplication.processEvents()
         self._xorriso.run(args)
 
@@ -675,8 +702,19 @@ class MainWindow(QMainWindow):
 
     def _on_stderr(self, text):
         self.log_viewer.append_stderr(text)
+        self._parse_progress(text)
+
+    def _parse_progress(self, text):
+        import re
+        m = re.search(r'Writing:\s+\d+s\s+(\d+\.?\d*)%', text)
+        if m:
+            pct = float(m.group(1))
+            self.progress_bar.setRange(0, 100)
+            self.progress_bar.setValue(int(pct))
 
     def _on_process_finished(self, exit_code):
+        self.progress_bar.setVisible(False)
+        self.progress_bar.setRange(0, 0)
         if exit_code == 0:
             self.log_viewer.append_success(tr("log.exec_success").format(code=exit_code))
             self.status_bar.showMessage(tr("status.success"))

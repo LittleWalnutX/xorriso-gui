@@ -135,5 +135,20 @@
     "placeholder.empty_dir": "——（空文件夹）——",
     "table.action": "操作",
     "table.source": "源",
-    "table.target": "目标"
+    "table.target": "目标",
+    "mount.label": "挂载光盘: {drive}",
+    "mount.session": "会话",
+    "mount.mount_point": "挂载点",
+    "mount.readonly": "只读",
+    "mount.copy": "复制命令",
+    "mount.execute": "挂载",
+    "mount.copied": "命令已复制到剪贴板",
+    "mount.confirm_title": "确认挂载",
+    "mount.confirm_text": "即将执行:\n{cmd}",
+    "mount.success": "挂载成功: {pt}",
+    "mount.failed": "挂载失败: {err}",
+    "mount.no_pkexec": "未找到 pkexec，请手动 sudo mount ...",
+    "mount.sessions_found": "发现 {n} 个会话，默认选择最新。",
+    "mount.single_session": "单会话光盘。",
+    "btn.mount": "挂载"
 }

@@ -135,5 +135,20 @@
     "tooltip.create_dir_in_iso": "ISO 内にディレクトリを作成",
     "table.action": "操作",
     "table.source": "ソース",
-    "table.target": "ターゲット"
+    "table.target": "ターゲット",
+    "mount.label": "ディスクをマウント: {drive}",
+    "mount.session": "セッション",
+    "mount.mount_point": "マウントポイント",
+    "mount.readonly": "読み取り専用",
+    "mount.copy": "コマンドをコピー",
+    "mount.execute": "マウント",
+    "mount.copied": "コマンドをクリップボードにコピーしました",
+    "mount.confirm_title": "マウント確認",
+    "mount.confirm_text": "実行します:\n{cmd}",
+    "mount.success": "マウント成功: {pt}",
+    "mount.failed": "マウント失敗: {err}",
+    "mount.no_pkexec": "pkexec が見つかりません。sudo mount ... を手動で実行してください",
+    "mount.sessions_found": "{n} 個のセッションが見つかりました。最新をデフォルト選択。",
+    "mount.single_session": "単一セッションディスク。",
+    "btn.mount": "マウント"
 }

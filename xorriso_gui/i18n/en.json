@@ -135,5 +135,20 @@
     "tooltip.create_dir_in_iso": "Create directory in ISO",
     "table.action": "Action",
     "table.source": "Source",
-    "table.target": "Target"
+    "table.target": "Target",
+    "mount.label": "Mount disc: {drive}",
+    "mount.session": "Session",
+    "mount.mount_point": "Mount point",
+    "mount.readonly": "Read-only",
+    "mount.copy": "Copy command",
+    "mount.execute": "Mount",
+    "mount.copied": "Command copied to clipboard",
+    "mount.confirm_title": "Confirm Mount",
+    "mount.confirm_text": "About to execute:\n{cmd}",
+    "mount.success": "Mounted successfully at {pt}",
+    "mount.failed": "Mount failed: {err}",
+    "mount.no_pkexec": "pkexec not found. Try: sudo mount ...",
+    "mount.sessions_found": "{n} sessions found. Latest selected by default.",
+    "mount.single_session": "Single session disc.",
+    "btn.mount": "Mount"
 }
