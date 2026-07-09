@@ -15,7 +15,7 @@ class MountDialog(QDialog):
         self.drive_path = drive_path
         self._sessions = {}
         self.setWindowTitle(tr("mount.title"))
-        self.resize(480, 280)
+        self.resize(500, 320)
         self._init_ui()
         self._load_sessions()
 
@@ -63,6 +63,10 @@ class MountDialog(QDialog):
         self.copy_btn = QPushButton(tr("mount.copy"))
         self.copy_btn.clicked.connect(self._on_copy)
         bl.addWidget(self.copy_btn)
+        self.unmount_btn = QPushButton(tr("mount.unmount"))
+        self.unmount_btn.setToolTip(tr("mount.unmount_tip"))
+        self.unmount_btn.clicked.connect(self._on_unmount)
+        bl.addWidget(self.unmount_btn)
         bl.addStretch()
         self.exec_btn = QPushButton(tr("mount.execute"))
         self.exec_btn.setStyleSheet(
@@ -91,83 +95,6 @@ class MountDialog(QDialog):
         session = self.session_spin.value()
         ro = "ro" if self.ro_check.isChecked() else "rw"
         mount_pt = self.mount_edit.text().strip()
-        if session > 1:
-            return f"xorriso -dev '{drive}' -osirrox on -mount '{drive}' auto {session} '{mount_pt}'"
-        else:
-            return f"mount -t iso9660 -o {ro} '{drive}' '{mount_pt}'"
-
-    def _on_copy(self):
-        cmd = self._build_command()
-        QApplication.clipboard().setText(cmd)
-        self.info_label.setText(tr("mount.copied"))
-
-    def _on_execute(self):
-        drive = self._resolve_drive() or self.drive_path
-        cmd = self._build_command()
-        mount_pt = self.mount_edit.text().strip()
-        session = self.session_spin.value()
-
-        try:
-            os.makedirs(mount_pt, exist_ok=True)
-        except (PermissionError, OSError):
-            pass
-
-        reply = QMessageBox.question(
-            self, tr("mount.confirm_title"),
-            tr("mount.confirm_text").format(cmd=cmd),
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if reply != QMessageBox.Yes:
-            return
-
-        if session > 1:
-            mount_args = ["xorriso", "-dev", drive, "-osirrox", "on",
-                          "-mount", drive, "auto", str(session), mount_pt]
-        else:
-            ro = "ro" if self.ro_check.isChecked() else "rw"
-            mount_args = ["mount", "-t", "iso9660", "-o", ro, drive, mount_pt]
-
-        for elevator in ["pkexec", "kdesu", "gksudo", "gksu"]:
-            try:
-                self.info_label.setText(tr("mount.trying").format(tool=elevator))
-                QApplication.processEvents()
-                result = subprocess.run([elevator] + mount_args,
-                                        capture_output=True, text=True, timeout=60)
-                if result.returncode == 0:
-                    self.info_label.setText(tr("mount.success").format(pt=mount_pt))
-                    return
-                elif "not authorized" in (result.stderr + result.stdout).lower() \
-                        or "incorrect password" in (result.stderr + result.stdout).lower():
-                    self.info_label.setText(tr("mount.auth_failed"))
-                    return
-            except FileNotFoundError:
-                continue
-
-        self.info_label.setText(tr("mount.no_elevator"))
-
-    def _load_sessions(self):
-        drive = self._resolve_drive() or self.drive_path
-        if not drive:
-            return
-        self._worker = _SessionWorker(drive, self)
-        self._worker.result.connect(self._on_sessions_loaded)
-        self._worker.start()
-
-    def _on_sessions_loaded(self, sessions):
-        self._sessions = {num: lba for num, lba in sessions}
-        count = len(sessions)
-        if count > 1:
-            self.session_spin.setMaximum(count)
-            self.session_spin.setValue(count)
-            self.info_label.setText(tr("mount.sessions_found").format(n=count))
-        else:
-            self.info_label.setText(tr("mount.single_session"))
-
-    def _build_command(self):
-        drive = self._resolve_drive() or self.drive_path
-        session = self.session_spin.value()
-        ro = "ro" if self.ro_check.isChecked() else "rw"
-        mount_pt = self.mount_edit.text().strip()
         lba = self._sessions.get(session)
         if lba and session > 1:
             return f"mount -t iso9660 -o {ro},sbsector={lba} '{drive}' '{mount_pt}'"
@@ -179,16 +106,31 @@ class MountDialog(QDialog):
         QApplication.clipboard().setText(cmd)
         self.info_label.setText(tr("mount.copied"))
 
+    def _check_mount_point(self, mount_pt):
+        try:
+            os.makedirs(mount_pt, exist_ok=True)
+        except PermissionError:
+            return False, tr("mount.err_perm").format(pt=mount_pt)
+        if os.path.ismount(mount_pt):
+            return False, tr("mount.err_already_mounted").format(pt=mount_pt)
+        try:
+            items = os.listdir(mount_pt)
+            if items:
+                return False, tr("mount.err_not_empty").format(pt=mount_pt, n=len(items))
+        except PermissionError:
+            pass
+        return True, ""
+
     def _on_execute(self):
         drive = self._resolve_drive() or self.drive_path
         cmd = self._build_command()
         mount_pt = self.mount_edit.text().strip()
         session = self.session_spin.value()
 
-        try:
-            os.makedirs(mount_pt, exist_ok=True)
-        except (PermissionError, OSError):
-            pass
+        ok, err = self._check_mount_point(mount_pt)
+        if not ok:
+            self.info_label.setText(err)
+            return
 
         reply = QMessageBox.question(
             self, tr("mount.confirm_title"),
@@ -231,6 +173,57 @@ class MountDialog(QDialog):
             self.info_label.setText(tr("mount.failed").format(err="all elevators failed"))
         else:
             self.info_label.setText(tr("mount.no_elevator"))
+
+    def _on_unmount(self):
+        mount_pt = self.mount_edit.text().strip()
+        if not mount_pt:
+            return
+        if not os.path.ismount(mount_pt):
+            self.info_label.setText(tr("mount.not_mounted").format(pt=mount_pt))
+            return
+
+        reply = QMessageBox.question(
+            self, tr("mount.unmount_confirm_title"),
+            tr("mount.unmount_confirm_text").format(pt=mount_pt),
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        for elevator in ["pkexec", "kdesu", "gksudo", "gksu"]:
+            try:
+                self.info_label.setText(tr("mount.unmounting").format(pt=mount_pt, tool=elevator))
+                QApplication.processEvents()
+                result = subprocess.run([elevator, "umount", mount_pt],
+                                        capture_output=True, text=True, timeout=30)
+                if result.returncode == 0:
+                    self.info_label.setText(tr("mount.unmount_ok").format(pt=mount_pt))
+                    return
+                else:
+                    err = (result.stderr + result.stdout).strip()
+                    self.info_label.setText(tr("mount.unmount_failed").format(err=err[:200] if err else "unknown"))
+                    return
+            except FileNotFoundError:
+                continue
+        self.info_label.setText(tr("mount.no_elevator"))
+
+    def _load_sessions(self):
+        drive = self._resolve_drive() or self.drive_path
+        if not drive:
+            return
+        self._worker = _SessionWorker(drive, self)
+        self._worker.result.connect(self._on_sessions_loaded)
+        self._worker.start()
+
+    def _on_sessions_loaded(self, sessions):
+        self._sessions = {num: lba for num, lba in sessions}
+        count = len(sessions)
+        if count > 1:
+            self.session_spin.setMaximum(count)
+            self.session_spin.setValue(count)
+            self.info_label.setText(tr("mount.sessions_found").format(n=count))
+        else:
+            self.info_label.setText(tr("mount.single_session"))
 
 
 class _SessionWorker(QThread):

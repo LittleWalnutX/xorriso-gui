@@ -156,5 +156,16 @@
     "mount.title": "挂载光盘",
     "mount.drive": "驱动器",
     "mount.trying": "正在尝试 {tool}...",
-    "mount.session_hint": "session=1 为最新（默认），>1 用 xorriso 挂载旧 session"
+    "mount.session_hint": "session=1 为最新（默认），>1 用 xorriso 挂载旧 session",
+    "mount.unmount": "卸载",
+    "mount.unmount_tip": "卸载此挂载点",
+    "mount.err_perm": "无法创建挂载点: {pt}（权限不足）",
+    "mount.err_already_mounted": "{pt} 已被挂载",
+    "mount.err_not_empty": "{pt} 不为空（{n} 项）。挂载点必须为空目录。",
+    "mount.not_mounted": "{pt} 未被挂载",
+    "mount.unmount_confirm_title": "确认卸载",
+    "mount.unmount_confirm_text": "卸载 {pt}？",
+    "mount.unmounting": "正在通过 {tool} 卸载 {pt}...",
+    "mount.unmount_ok": "已卸载 {pt}",
+    "mount.unmount_failed": "卸载失败: {err}"
 }

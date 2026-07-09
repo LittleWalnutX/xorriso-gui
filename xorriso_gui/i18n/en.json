@@ -156,5 +156,16 @@
     "mount.title": "Mount Disc",
     "mount.drive": "Drive",
     "mount.trying": "Trying {tool}...",
-    "mount.session_hint": "1 = latest (default), >1 uses xorriso for old sessions"
+    "mount.session_hint": "1 = latest (default), >1 uses xorriso for old sessions",
+    "mount.unmount": "Unmount",
+    "mount.unmount_tip": "Unmount this mount point",
+    "mount.err_perm": "Cannot create mount point: {pt} (permission denied)",
+    "mount.err_already_mounted": "{pt} is already mounted",
+    "mount.err_not_empty": "{pt} is not empty ({n} items). Mount point must be empty.",
+    "mount.not_mounted": "{pt} is not mounted",
+    "mount.unmount_confirm_title": "Confirm Unmount",
+    "mount.unmount_confirm_text": "Unmount {pt} ?",
+    "mount.unmounting": "Unmounting {pt} via {tool}...",
+    "mount.unmount_ok": "Unmounted {pt}",
+    "mount.unmount_failed": "Unmount failed: {err}"
 }

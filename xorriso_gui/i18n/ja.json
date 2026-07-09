@@ -156,5 +156,16 @@
     "mount.title": "ディスクのマウント",
     "mount.drive": "ドライブ",
     "mount.trying": "{tool} を試行中...",
-    "mount.session_hint": "1 = 最新（デフォルト）、>1 は xorriso で旧セッションをマウント"
+    "mount.session_hint": "1 = 最新（デフォルト）、>1 は xorriso で旧セッションをマウント",
+    "mount.unmount": "アンマウント",
+    "mount.unmount_tip": "このマウントポイントをアンマウント",
+    "mount.err_perm": "マウントポイントを作成できません: {pt}（権限不足）",
+    "mount.err_already_mounted": "{pt} は既にマウントされています",
+    "mount.err_not_empty": "{pt} は空ではありません（{n} 項目）。マウントポイントは空である必要があります。",
+    "mount.not_mounted": "{pt} はマウントされていません",
+    "mount.unmount_confirm_title": "アンマウント確認",
+    "mount.unmount_confirm_text": "{pt} をアンマウントしますか？",
+    "mount.unmounting": "{tool} で {pt} をアンマウント中...",
+    "mount.unmount_ok": "{pt} をアンマウントしました",
+    "mount.unmount_failed": "アンマウント失敗: {err}"
 }
