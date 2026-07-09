@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QFileSystemModel
 from PySide6.QtGui import QAction
 
 from xorriso_gui.models.task_item import TaskItem, TaskType
+from xorriso_gui.i18n import tr
 
 
 class DiskPanel(QWidget):
@@ -26,14 +27,14 @@ class DiskPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         hdr = QHBoxLayout()
-        self.path_label = QLabel("磁盘文件系统")
+        self.path_label = QLabel(tr("panel.disk_filesystem"))
         self.path_label.setStyleSheet("padding: 4px; font-weight: bold;")
         hdr.addWidget(self.path_label)
         hdr.addStretch()
 
         up_btn = QToolButton()
         up_btn.setText("\u2b06")
-        up_btn.setToolTip("向上一层")
+        up_btn.setToolTip(tr("menu.go_up"))
         up_btn.clicked.connect(self._go_up)
         hdr.addWidget(up_btn)
 
@@ -113,31 +114,31 @@ class DiskPanel(QWidget):
         selected = self.get_selected_paths()
         current_dir = self.get_current_path()
 
-        add_act = QAction("添加至 ISO", self)
-        add_act.setToolTip("将选中文件/目录加入任务队列")
+        add_act = QAction(tr("menu.add_to_iso"), self)
+        add_act.setToolTip(tr("menu.add_to_iso_tip"))
         add_act.triggered.connect(self._on_add_selected_to_iso)
         menu.addAction(add_act)
 
         iso_files = [p for p in selected if p.lower().endswith(".iso")]
         if iso_files:
-            open_iso_act = QAction("作为输入ISO镜像打开", self)
+            open_iso_act = QAction(tr("menu.open_as_iso"), self)
             open_iso_act.setToolTip(f"加载 {os.path.basename(iso_files[0])} 到输入框")
             open_iso_act.triggered.connect(lambda: self._on_open_as_iso(iso_files[0]))
             menu.addAction(open_iso_act)
 
         menu.addSeparator()
 
-        new_folder_act = QAction("新建文件夹", self)
+        new_folder_act = QAction(tr("menu.new_folder"), self)
         new_folder_act.triggered.connect(lambda: self._on_new_folder(current_dir))
         menu.addAction(new_folder_act)
 
         menu.addSeparator()
 
-        refresh_act = QAction("刷新", self)
+        refresh_act = QAction(tr("menu.refresh"), self)
         refresh_act.triggered.connect(self._on_refresh)
         menu.addAction(refresh_act)
 
-        open_there_act = QAction("在终端打开", self)
+        open_there_act = QAction(tr("menu.open_terminal"), self)
         open_there_act.triggered.connect(lambda: self._on_open_terminal(current_dir))
         menu.addAction(open_there_act)
 
@@ -152,7 +153,7 @@ class DiskPanel(QWidget):
         self.load_iso_file.emit(path)
 
     def _on_new_folder(self, parent_dir):
-        name, ok = QInputDialog.getText(self, "新建文件夹", "文件夹名称:")
+        name, ok = QInputDialog.getText(self, tr("dialog.new_folder"), tr("dialog.folder_name"))
         if ok and name:
             new_path = os.path.join(parent_dir, name)
             try:

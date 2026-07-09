@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, Signal
 
 from xorriso_gui.engine.drive_manager import scan_drives
 from xorriso_gui.engine.task_builder import TaskBuilder
+from xorriso_gui.i18n import tr
 
 
 class BurnIsoDialog(QDialog):
@@ -12,7 +13,7 @@ class BurnIsoDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("刻录 ISO 镜像到光盘")
+        self.setWindowTitle(tr("burn.title"))
         self.setMinimumWidth(480)
         self._init_ui()
         self._refresh_drives()
@@ -20,32 +21,32 @@ class BurnIsoDialog(QDialog):
     def _init_ui(self):
         layout = QVBoxLayout(self)
 
-        iso_group = QGroupBox("ISO 镜像文件")
+        iso_group = QGroupBox(tr("burn.iso_group"))
         iso_layout = QHBoxLayout()
         self.iso_edit = QLineEdit()
-        self.iso_edit.setPlaceholderText("选择 .iso 文件...")
+        self.iso_edit.setPlaceholderText(tr("burn.select_iso"))
         iso_layout.addWidget(self.iso_edit)
-        browse_btn = QPushButton("浏览...")
+        browse_btn = QPushButton(tr("btn.browse"))
         browse_btn.clicked.connect(self._browse_iso)
         iso_layout.addWidget(browse_btn)
         iso_group.setLayout(iso_layout)
         layout.addWidget(iso_group)
 
-        drive_group = QGroupBox("目标光盘驱动器")
+        drive_group = QGroupBox(tr("burn.drive_group"))
         drive_layout = QHBoxLayout()
         self.drive_combo = QComboBox()
         self.drive_combo.setEditable(True)
         self.drive_combo.setMinimumWidth(200)
         drive_layout.addWidget(self.drive_combo)
-        refresh_btn = QPushButton("刷新")
+        refresh_btn = QPushButton(tr("btn.refresh"))
         refresh_btn.clicked.connect(self._refresh_drives)
         drive_layout.addWidget(refresh_btn)
         drive_group.setLayout(drive_layout)
         layout.addWidget(drive_group)
 
-        opts_group = QGroupBox("选项")
+        opts_group = QGroupBox(tr("burn.options_group"))
         opts_layout = QHBoxLayout()
-        self.eject_check = QCheckBox("完成后弹出")
+        self.eject_check = QCheckBox(tr("burn.eject_after"))
         self.eject_check.setChecked(True)
         opts_layout.addWidget(self.eject_check)
         opts_layout.addStretch()
@@ -56,13 +57,16 @@ class BurnIsoDialog(QDialog):
 
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
-        cancel_btn = QPushButton("取消")
+        cancel_btn = QPushButton(tr("confirm.cancel"))
         cancel_btn.clicked.connect(self.reject)
         btn_layout.addWidget(cancel_btn)
-        self.burn_btn = QPushButton("▶ 刻录")
+        self.burn_btn = QPushButton(tr("burn.burn_btn"))
         self.burn_btn.setStyleSheet(
-            "QPushButton { background-color: #27ae60; color: white; "
-            "font-weight: bold; padding: 6px 20px; }"
+            "QPushButton { background-color: #27ae60; color: white; font-weight: bold; padding: 6px 20px; }"
+        )
+        self.burn_btn.setStyleSheet(
+            
+            
         )
         self.burn_btn.clicked.connect(self._on_burn)
         btn_layout.addWidget(self.burn_btn)
@@ -76,8 +80,8 @@ class BurnIsoDialog(QDialog):
 
     def _browse_iso(self):
         path, _ = QFileDialog.getOpenFileName(
-            self, "选择 ISO 镜像文件", "",
-            "ISO 镜像 (*.iso *.ISO);;所有文件 (*)"
+            self, tr("dialog.select_iso"), "",
+            tr("iso_filter")
         )
         if path:
             self.iso_edit.setText(path)
@@ -97,10 +101,10 @@ class BurnIsoDialog(QDialog):
         drive = self._resolve_drive()
 
         if not iso_path:
-            QMessageBox.warning(self, "错误", "请选择 ISO 镜像文件。")
+            QMessageBox.warning(self, "Error", tr("error.select_iso"))
             return
         if not drive:
-            QMessageBox.warning(self, "错误", "请选择目标驱动器。")
+            QMessageBox.warning(self, "Error", tr("error.select_target"))
             return
 
         eject = "-eject" if self.eject_check.isChecked() else ""
@@ -112,9 +116,9 @@ class BurnIsoDialog(QDialog):
         display = "xorriso " + " ".join(args)
 
         msg = QMessageBox(self)
-        msg.setWindowTitle("确认刻录")
+        msg.setWindowTitle(tr("burn.confirm_title"))
         msg.setIcon(QMessageBox.Question)
-        msg.setText(f"即将刻录 ISO 到 {drive}：")
+        msg.setText(tr("burn.confirm_text").format(drive=drive))
         msg.setInformativeText(display[:200] + ("..." if len(display) > 200 else ""))
         msg.setDetailedText(display)
         run_btn = msg.addButton("▶ 刻录", QMessageBox.AcceptRole)

@@ -6,6 +6,7 @@ from PySide6.QtGui import QAction
 
 from xorriso_gui.widgets.file_tree_view import FileTreeView
 from xorriso_gui.models.file_tree_model import FileTreeModel
+from xorriso_gui.i18n import tr
 
 
 class IsoDropTreeView(FileTreeView):
@@ -72,7 +73,7 @@ class IsoPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.path_label = QLabel("ISO 映像 / 光盘内容")
+        self.path_label = QLabel(tr("panel.iso_contents"))
         self.path_label.setStyleSheet("padding: 4px; font-weight: bold;")
         layout.addWidget(self.path_label)
 
@@ -134,8 +135,8 @@ class IsoPanel(QWidget):
         selected = self.get_selected_paths()
         target_dir = self.get_target_directory_for_context()
 
-        new_folder_act = QAction("新建文件夹", self)
-        new_folder_act.setToolTip("在 ISO 中创建目录")
+        new_folder_act = QAction(tr("menu.new_folder"), self)
+        new_folder_act.setToolTip(tr("tooltip.create_dir_in_iso"))
         new_folder_iso_path = target_dir.rstrip("/") + "/"
         new_folder_act.triggered.connect(
             lambda: self._on_mkdir(new_folder_iso_path))
@@ -144,24 +145,24 @@ class IsoPanel(QWidget):
         if selected:
             menu.addSeparator()
 
-            remove_act = QAction("删除", self)
+            remove_act = QAction(tr("menu.delete"), self)
             remove_act.triggered.connect(self._on_remove)
             menu.addAction(remove_act)
 
-            rename_act = QAction("重命名", self)
+            rename_act = QAction(tr("menu.rename"), self)
             rename_act.triggered.connect(self._on_rename)
             menu.addAction(rename_act)
 
             menu.addSeparator()
 
-            extract_act = QAction("提取到磁盘...", self)
+            extract_act = QAction(tr("menu.extract"), self)
             extract_act.triggered.connect(self._on_extract)
             menu.addAction(extract_act)
 
         menu.exec(self.tree.viewport().mapToGlobal(pos))
 
     def _on_mkdir(self, parent_path):
-        name, ok = QInputDialog.getText(self, "新建文件夹", "文件夹名称:")
+        name, ok = QInputDialog.getText(self, tr("dialog.new_folder"), tr("dialog.folder_name"))
         if ok and name:
             new_path = parent_path.rstrip("/") + "/" + name
             self.prepare_mkdir.emit(new_path)
@@ -177,7 +178,7 @@ class IsoPanel(QWidget):
             return
         old = paths[0]
         name = old.rsplit("/", 1)[-1]
-        new_name, ok = QInputDialog.getText(self, "重命名", "新名称:", text=name)
+        new_name, ok = QInputDialog.getText(self, tr("dialog.rename"), tr("dialog.new_name"), text=name)
         if ok and new_name and new_name != name:
             parent = old.rsplit("/", 1)[0]
             if not parent:
@@ -189,6 +190,6 @@ class IsoPanel(QWidget):
         for p in self.get_selected_paths():
             if p == "/":
                 continue
-            dest = QFileDialog.getExistingDirectory(self, f"提取 '{p}' 到目录")
+            dest = QFileDialog.getExistingDirectory(self, tr("dialog.extract_to").format(path=p))
             if dest:
                 self.prepare_extract.emit(p, dest)

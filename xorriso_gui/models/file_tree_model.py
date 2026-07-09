@@ -119,7 +119,8 @@ class FileTreeModel(QAbstractItemModel):
         col = index.column()
         if role == Qt.DisplayRole:
             if node.is_placeholder:
-                return "——（空文件夹）——" if col == 0 else ""
+                from xorriso_gui.i18n import tr
+                return tr("placeholder.empty_dir") if col == 0 else ""
             if col == 0:
                 return node.name
             elif col == 1:
@@ -150,7 +151,9 @@ class FileTreeModel(QAbstractItemModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return ["名称", "大小", "权限", "日期"][section]
+            from xorriso_gui.i18n import tr
+            return [tr("tree.name"), tr("tree.size"),
+                    tr("tree.permissions"), tr("tree.date")][section]
         return None
 
     def flags(self, index):

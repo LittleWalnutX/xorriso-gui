@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 
+from xorriso_gui.i18n import load_translations, set_language, get_language
 from xorriso_gui.main_window import MainWindow
 
 
@@ -15,9 +16,12 @@ def main():
     app = QApplication(sys.argv)
     app.setOrganizationName("xorriso-gui")
     app.setApplicationName("xorriso-gui")
-    app.setApplicationDisplayName("xorriso-gui — ISO 镜像管理器")
+    app.setApplicationDisplayName("xorriso-gui — ISO Image Manager")
     if os.path.exists(_ICON_PATH):
         app.setWindowIcon(QIcon(_ICON_PATH))
+
+    load_translations()
+    set_language("ja")
 
     style_sheet = """
     QTreeView {

@@ -7,17 +7,17 @@ from PySide6.QtGui import QIcon
 from xorriso_gui.models.task_item import TaskType
 
 
-_TYPE_LABELS = {
-    TaskType.ADD: "添加",
-    TaskType.MAP: "映射",
-    TaskType.UPDATE: "更新",
-    TaskType.REMOVE: "删除",
-    TaskType.MKDIR: "新建文件夹",
-    TaskType.RENAME: "重命名",
-    TaskType.CHMOD: "改权限",
-    TaskType.EXTRACT: "提取",
-    TaskType.BLANK: "格式化",
-    TaskType.INFO: "信息",
+_TYPE_LABEL_KEYS = {
+    TaskType.ADD: "task.type_add",
+    TaskType.MAP: "task.type_map",
+    TaskType.UPDATE: "task.type_update",
+    TaskType.REMOVE: "task.type_remove",
+    TaskType.MKDIR: "task.type_mkdir",
+    TaskType.RENAME: "task.type_rename",
+    TaskType.CHMOD: "task.type_chmod",
+    TaskType.EXTRACT: "task.type_extract",
+    TaskType.BLANK: "task.type_blank",
+    TaskType.INFO: "task.type_info",
 }
 
 
@@ -35,25 +35,25 @@ class TaskQueueWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         hdr_layout = QHBoxLayout()
-        title = QLabel("任务队列")
-        title.setStyleSheet("padding: 4px; font-weight: bold;")
-        hdr_layout.addWidget(title)
+        self.title_label = QLabel("Task Queue")
+        self.title_label.setStyleSheet("padding: 4px; font-weight: bold;")
+        hdr_layout.addWidget(self.title_label)
         hdr_layout.addStretch()
 
-        self.clear_btn = QPushButton("清空")
+        self.clear_btn = QPushButton("Clear All")
         self.clear_btn.clicked.connect(self._on_clear)
-        self.clear_btn.setToolTip("清空所有待执行任务")
+        self.clear_btn.setToolTip("Clear all pending tasks")
         hdr_layout.addWidget(self.clear_btn)
 
-        self.remove_btn = QPushButton("移除选中")
+        self.remove_btn = QPushButton("Remove Selected")
         self.remove_btn.clicked.connect(self._on_remove_selected)
-        self.remove_btn.setToolTip("移除选中的任务")
+        self.remove_btn.setToolTip("Remove selected task")
         hdr_layout.addWidget(self.remove_btn)
 
         layout.addLayout(hdr_layout)
 
         self.table = QTableWidget(0, 3, self)
-        self.table.setHorizontalHeaderLabels(["操作", "源", "目标"])
+        self.table.setHorizontalHeaderLabels(["Action", "Source", "Target"])
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -64,7 +64,7 @@ class TaskQueueWidget(QWidget):
         self.table.setMaximumHeight(150)
         layout.addWidget(self.table)
 
-        self.execute_btn = QPushButton("▶ 执行")
+        self.execute_btn = QPushButton("▶ Execute")
         self.execute_btn.setStyleSheet(
             "QPushButton { background-color: #27ae60; color: white; "
             "font-weight: bold; padding: 6px 20px; border-radius: 4px; "
@@ -76,11 +76,25 @@ class TaskQueueWidget(QWidget):
         self.execute_btn.setEnabled(False)
         layout.addWidget(self.execute_btn)
 
+    def _type_label(self, task_type):
+        from xorriso_gui.i18n import tr
+        key = _TYPE_LABEL_KEYS.get(task_type, task_type)
+        return tr(key, task_type)
+
+    def _update_type_labels(self):
+        from xorriso_gui.i18n import tr
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item:
+                task = item.data(Qt.UserRole)
+                if task:
+                    item.setText(self._type_label(task.task_type))
+
     def add_task(self, task):
         row = self.table.rowCount()
         self.table.insertRow(row)
 
-        type_item = QTableWidgetItem(_TYPE_LABELS.get(task.task_type, task.task_type))
+        type_item = QTableWidgetItem(self._type_label(task.task_type))
         type_item.setFlags(type_item.flags() | Qt.ItemIsUserCheckable)
         type_item.setData(Qt.UserRole, task)
         self.table.setItem(row, 0, type_item)

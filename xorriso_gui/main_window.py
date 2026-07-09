@@ -20,6 +20,7 @@ from xorriso_gui.widgets.task_queue_widget import TaskQueueWidget
 from xorriso_gui.widgets.log_viewer import LogViewer
 from xorriso_gui.widgets.burn_iso_dialog import BurnIsoDialog
 from xorriso_gui.widgets.toc_dialog import TocDialog
+from xorriso_gui.i18n import tr, set_language, languages, get_language
 
 
 class MainWindow(QMainWindow):
@@ -43,10 +44,10 @@ class MainWindow(QMainWindow):
         self._xorriso.finished.connect(self._on_process_finished)
 
         self._init_ui()
+        self._apply_translations()
         self._refresh_drives()
 
         if self._is_disc_mode:
-            self.disc_mode_btn.setText("续刻模式 ✓")
             self.disc_mode_btn.setStyleSheet(
                 "QPushButton { background-color: #e67e22; color: white; }"
             )
@@ -112,6 +113,12 @@ class MainWindow(QMainWindow):
         self.preview_btn.clicked.connect(self._toggle_preview)
         row1.addWidget(self.preview_btn)
 
+        self.lang_btn = QPushButton("🌐")
+        self.lang_btn.setFixedWidth(32)
+        self.lang_btn.setToolTip("Switch language / 言語切替")
+        self.lang_btn.clicked.connect(self._toggle_language)
+        row1.addWidget(self.lang_btn)
+
         row1.addStretch()
         tb_wrapper.addLayout(row1)
 
@@ -156,7 +163,7 @@ class MainWindow(QMainWindow):
         self.toc_btn.clicked.connect(self._on_toc_dialog)
         row2.addWidget(self.toc_btn)
 
-        self.check_media_btn = QPushButton("检查介质")
+        self.check_media_btn = QPushButton(tr("check_media.title"))
         self.check_media_btn.setToolTip("扫描光盘介质检查损坏块")
         self.check_media_btn.clicked.connect(self._on_check_media)
         row2.addWidget(self.check_media_btn)
@@ -211,7 +218,7 @@ class MainWindow(QMainWindow):
     def _init_statusbar(self):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("就绪")
+        self.status_bar.showMessage(tr("status.ready"))
 
     def _update_media_space(self, path):
         if not path or not path.startswith("/dev/"):
@@ -225,7 +232,7 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"📀 {summary}")
 
     def _refresh_drives(self):
-        self.status_bar.showMessage("扫描驱动器...")
+        self.status_bar.showMessage(tr("status.scanning"))
         QApplication.setOverrideCursor(Qt.WaitCursor)
         self._scan_worker = ScanDrivesWorker(self)
         self._scan_worker.result.connect(self._on_drives_scanned)
@@ -239,9 +246,9 @@ class MainWindow(QMainWindow):
             self.drive_combo.addItem(d.display_name(), d.path)
             self.output_combo.addItem(d.display_name(), d.path)
         if drives:
-            self.status_bar.showMessage(f"发现 {len(drives)} 个驱动器")
+            self.status_bar.showMessage(tr("status.found").format(count=len(drives)))
         else:
-            self.status_bar.showMessage("未发现光驱，可手动输入路径或ISO文件")
+            self.status_bar.showMessage(tr("status.no_drives"))
 
     def _browse_iso(self):
         path, _ = QFileDialog.getOpenFileName(
@@ -255,18 +262,18 @@ class MainWindow(QMainWindow):
         path = _resolve_combo_path(self.drive_combo)
 
         if not path:
-            self.log_viewer.append_info("请选择或输入一个驱动器或ISO文件路径")
+            self.log_viewer.append_info(tr("error.no_input"))
             return
 
-        self.status_bar.showMessage(f"正在加载 {path} ...")
+        self.status_bar.showMessage(tr("status.loading").format(path=path))
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
         if path.startswith("/dev/"):
             self._set_disc_mode(True)
-            self.log_viewer.append_info("检测到设备路径，已自动开启续刻模式")
+            self.log_viewer.append_info(tr("log.device_path_disc"))
         else:
             self._set_disc_mode(False)
-            self.log_viewer.append_info("检测到文件路径，已自动关闭续刻模式")
+            self.log_viewer.append_info(tr("log.file_path_iso"))
 
         self._load_worker = LoadIsoWorker(path, self)
         self._load_worker.result.connect(self._on_iso_loaded)
@@ -276,13 +283,13 @@ class MainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()
         path = self._load_worker.drive_path
         if error:
-            self.log_viewer.append_error(f"加载失败: {error}")
-            self.status_bar.showMessage(f"加载失败: {error}")
+            self.log_viewer.append_error(tr("error.load_failed").format(msg=error))
+            self.status_bar.showMessage(tr("error.load_failed").format(msg=error))
         else:
             self._actual_root = root.clone()
             self.iso_panel.load_contents(root)
-            self.log_viewer.append_info(f"已加载: {path}")
-            self.status_bar.showMessage(f"已加载: {path}")
+            self.log_viewer.append_info(tr("status.loaded").format(path=path))
+            self.status_bar.showMessage(tr("status.loaded").format(path=path))
             self.output_combo.setEditText(path)
             if volid:
                 self.volume_id_edit.setText(volid)
@@ -297,8 +304,8 @@ class MainWindow(QMainWindow):
         self._set_preview_mode(True)
         self._tasks.clear()
         self.task_queue.clear_all()
-        self.log_viewer.append_info("已创建新的空白 ISO 映像（已自动开启预览模式）")
-        self.status_bar.showMessage("新的空白 ISO 映像")
+        self.log_viewer.append_info(tr("log.new_iso_preview"))
+        self.status_bar.showMessage(tr("status.new_empty"))
 
     def _toggle_disc_mode(self):
         self._set_disc_mode(not self._is_disc_mode)
@@ -367,12 +374,72 @@ class MainWindow(QMainWindow):
         elif task.task_type == TaskType.RENAME:
             _rename_node_in_tree(root, task.source, task.target)
 
+    def _toggle_language(self):
+        langs = languages()
+        current = get_language()
+        next_lang = langs[(langs.index(current) + 1) % len(langs)] if langs else "en"
+        set_language(next_lang)
+        self._apply_translations()
+        self._refresh_display()
+
+    def _apply_translations(self):
+        self.setWindowTitle(tr("window.title"))
+
+        self.browse_btn.setText(tr("btn.browse"))
+        self.browse_btn.setToolTip(tr("tooltip.browse"))
+        self.refresh_btn.setText(tr("btn.refresh"))
+        self.refresh_btn.setToolTip(tr("tooltip.refresh"))
+        self.load_btn.setText(tr("btn.load"))
+        self.load_btn.setToolTip(tr("tooltip.load"))
+        self.new_iso_btn.setText(tr("btn.new_iso"))
+        self.new_iso_btn.setToolTip(tr("tooltip.new_iso"))
+
+        if self._is_disc_mode:
+            self.disc_mode_btn.setText(tr("btn.disc_mode_on"))
+        else:
+            self.disc_mode_btn.setText(tr("btn.disc_mode"))
+        self.disc_mode_btn.setToolTip(tr("tooltip.disc_mode"))
+
+        if self._preview_mode:
+            self.preview_btn.setText(tr("btn.preview_on"))
+        else:
+            self.preview_btn.setText(tr("btn.preview"))
+        self.preview_btn.setToolTip(tr("tooltip.preview"))
+
+        self.volume_id_edit.setPlaceholderText(tr("placeholder.volume_id"))
+        self.volume_id_edit.setToolTip(tr("tooltip.volume_id"))
+        self.left_arrow_btn.setToolTip(tr("tooltip.left_arrow"))
+        self.right_arrow_btn.setToolTip(tr("tooltip.right_arrow"))
+        self.trash_btn.setToolTip(tr("tooltip.trash"))
+        self.burn_iso_btn.setText(tr("btn.burn_iso"))
+        self.burn_iso_btn.setToolTip(tr("tooltip.burn_iso"))
+        self.toc_btn.setText(tr("btn.toc"))
+        self.toc_btn.setToolTip(tr("tooltip.toc"))
+        self.check_media_btn.setText(tr("btn.check_media"))
+        self.check_media_btn.setToolTip(tr("tooltip.check_media"))
+
+        self.task_queue.title_label.setText(tr("tab.tasks"))
+        self.task_queue.clear_btn.setText(tr("btn.clear_all"))
+        self.task_queue.remove_btn.setText(tr("btn.remove_selected"))
+        self.task_queue.execute_btn.setText(tr("btn.execute"))
+
+        self.tab_widget.setTabText(0, tr("tab.tasks"))
+        self.tab_widget.setTabText(1, tr("tab.log"))
+
+        self.disk_panel.path_label.setText(tr("panel.disk_filesystem"))
+        self.iso_panel.path_label.setText(tr("panel.iso_contents"))
+
+        self.task_queue._update_type_labels()
+
+        if not self.status_bar.currentMessage():
+            self.status_bar.showMessage(tr("status.ready"))
+
     def _on_add_to_iso(self, local_path, iso_path):
         task = TaskItem(TaskType.MAP, source=local_path, target=iso_path,
                         description=f"添加 {local_path} → {iso_path}")
         self._tasks.append(task)
         self.task_queue.add_task(task)
-        self.log_viewer.append_info(f"已加入任务: +添加 {local_path} → {iso_path}")
+        self.log_viewer.append_info(tr("log.task_add").format(src=local_path, dst=iso_path))
         self._refresh_display()
 
     def _on_remove_from_iso(self, iso_path):
@@ -390,7 +457,7 @@ class MainWindow(QMainWindow):
                 cancelled += 1
         if cancelled:
             self.log_viewer.append_info(
-                f"已取消 {cancelled} 个任务 (替代删除 {iso_path})")
+                tr("log.task_cancelled").format(count=cancelled, path=iso_path))
             self._refresh_display()
             return
 
@@ -398,7 +465,7 @@ class MainWindow(QMainWindow):
                         description=f"删除 {iso_path}")
         self._tasks.append(task)
         self.task_queue.add_task(task)
-        self.log_viewer.append_info(f"已加入任务: -删除 {iso_path}")
+        self.log_viewer.append_info(tr("log.task_remove").format(path=iso_path))
         self._refresh_display()
 
     def _remove_task_from_queue(self, task):
@@ -416,14 +483,14 @@ class MainWindow(QMainWindow):
                 self._tasks.remove(task)
                 self._remove_task_from_queue(task)
                 self.log_viewer.append_info(
-                    f"已取消之前的添加任务 (被重命名为 {new_path})")
+                    tr("log.task_cancelled_rename").format(path=new_path))
                 break
 
         task = TaskItem(TaskType.RENAME, source=old_path, target=new_path,
                         description=f"重命名 {old_path} → {new_path}")
         self._tasks.append(task)
         self.task_queue.add_task(task)
-        self.log_viewer.append_info(f"已加入任务: 重命名 {old_path} → {new_path}")
+        self.log_viewer.append_info(tr("log.task_rename").format(src=old_path, dst=new_path))
         self._refresh_display()
 
     def _on_extract_from_iso(self, iso_path, dest_path):
@@ -431,7 +498,7 @@ class MainWindow(QMainWindow):
                         description=f"提取 {iso_path} → {dest_path}")
         self._tasks.append(task)
         self.task_queue.add_task(task)
-        self.log_viewer.append_info(f"已加入任务: 提取 {iso_path} → {dest_path}")
+        self.log_viewer.append_info(tr("log.task_extract").format(src=iso_path, dst=dest_path))
         self._refresh_display()
 
     def _on_mkdir_in_iso(self, iso_path):
@@ -439,7 +506,7 @@ class MainWindow(QMainWindow):
                         description=f"新建文件夹 {iso_path}")
         self._tasks.append(task)
         self.task_queue.add_task(task)
-        self.log_viewer.append_info(f"已加入任务: 新建文件夹 {iso_path}")
+        self.log_viewer.append_info(tr("log.task_mkdir").format(path=iso_path))
         self._refresh_display()
 
     def _on_open_terminal(self, path):
@@ -471,27 +538,27 @@ class MainWindow(QMainWindow):
                 "time_limit=1800", "report=blocks_files"]
         display = f"xorriso -dev {drive} -check_media time_limit=1800 report=blocks_files"
         msg = QMessageBox(self)
-        msg.setWindowTitle("检查介质")
+        msg.setWindowTitle(tr("check_media.title"))
         msg.setIcon(QMessageBox.Question)
-        msg.setText(f"即将对 {drive} 进行介质检查（最长30分钟）")
+        msg.setText(tr("check_media.text").format(drive=drive))
         msg.setDetailedText(display)
         run_btn = msg.addButton("▶ 开始检查", QMessageBox.AcceptRole)
         msg.addButton("取消", QMessageBox.RejectRole)
         if msg.exec():
             self.log_viewer.append_info("=" * 60)
-            self.log_viewer.append_info(f"执行命令: {display}")
+            self.log_viewer.append_info(tr("log.exec_command").format(cmd=display))
             self.log_viewer.append_info("=" * 60)
-            self.status_bar.showMessage("正在检查介质 ...")
+            self.status_bar.showMessage(tr("status.checking"))
             QApplication.processEvents()
             self._xorriso.run(args)
 
     def _on_clear_tasks(self):
-        reply = QMessageBox.question(self, "确认清空", "确定要清空所有任务吗？",
+        reply = QMessageBox.question(self, tr("dialog.confirm_clear"), tr("dialog.confirm_clear_text"),
                                      QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
             self._tasks.clear()
             self.task_queue.clear_all()
-            self.log_viewer.append_info("任务队列已清空")
+            self.log_viewer.append_info(tr("log.tasks_cleared"))
             self._refresh_display()
 
     def _on_task_removed(self, task):
@@ -528,22 +595,22 @@ class MainWindow(QMainWindow):
             builder.set_output_drive(output_drive)
         elif input_drive and not output_drive:
             QMessageBox.warning(self, "错误",
-                "请指定输出目标（设备路径或ISO文件路径）。")
+                tr("error.no_output"))
             return False
         elif not input_drive and output_drive:
             builder.set_output_drive(output_drive)
         else:
             QMessageBox.warning(self, "错误",
-                "请指定输出目标（设备路径或ISO文件路径）。")
+                tr("error.no_output"))
             return False
 
         args = builder.build_args(self._tasks)
         display = builder.args_to_display(args)
 
         msg = QMessageBox(self)
-        msg.setWindowTitle("确认执行 xorriso 命令")
+        msg.setWindowTitle(tr("confirm.title"))
         msg.setIcon(QMessageBox.Question)
-        msg.setText("即将执行以下 xorriso 命令：")
+        msg.setText(tr("confirm.text"))
         msg.setDetailedText(display)
 
         cmd_preview = display[:200] + ("..." if len(display) > 200 else "")
@@ -565,17 +632,17 @@ class MainWindow(QMainWindow):
         args = self._pending_args
         display = self._pending_display
         self.log_viewer.append_info("=" * 60)
-        self.log_viewer.append_info(f"执行命令: {display}")
+        self.log_viewer.append_info(tr("log.exec_command").format(cmd=display))
         self.log_viewer.append_info("=" * 60)
-        self.status_bar.showMessage("正在执行 xorriso ...")
+        self.status_bar.showMessage(tr("status.executing"))
         QApplication.processEvents()
         self._xorriso.run(args)
 
     def _run_xorriso_direct(self, args, display):
         self.log_viewer.append_info("=" * 60)
-        self.log_viewer.append_info(f"执行命令: {display}")
+        self.log_viewer.append_info(tr("log.exec_command").format(cmd=display))
         self.log_viewer.append_info("=" * 60)
-        self.status_bar.showMessage("正在执行 xorriso ...")
+        self.status_bar.showMessage(tr("status.executing"))
         QApplication.processEvents()
         self._xorriso.run(args)
 
@@ -587,18 +654,18 @@ class MainWindow(QMainWindow):
 
     def _on_process_finished(self, exit_code):
         if exit_code == 0:
-            self.log_viewer.append_success(f"执行成功 (exit code: {exit_code})")
-            self.status_bar.showMessage("执行成功")
+            self.log_viewer.append_success(tr("log.exec_success").format(code=exit_code))
+            self.status_bar.showMessage(tr("status.success"))
             self._tasks.clear()
             self.task_queue.clear_all()
             if not self._is_disc_mode:
                 QTimer.singleShot(500, self._reload_iso_after_commit)
         else:
-            self.log_viewer.append_error(f"执行失败 (exit code: {exit_code})")
-            self.status_bar.showMessage(f"执行失败, exit code: {exit_code}")
+            self.log_viewer.append_error(tr("log.exec_failed").format(code=exit_code))
+            self.status_bar.showMessage(tr("status.failed").format(code=exit_code))
 
     def _reload_iso_after_commit(self):
-        self.status_bar.showMessage("重新加载 ISO 内容...")
+        self.status_bar.showMessage(tr("status.reloading"))
         output = _resolve_combo_path(self.output_combo)
         if output:
             self._reload_worker = LoadIsoWorker(output, self)
@@ -609,12 +676,12 @@ class MainWindow(QMainWindow):
         if not error:
             self.iso_panel.load_contents(root)
             path = self._reload_worker.drive_path
-            self.status_bar.showMessage(f"已重新加载: {path}")
+            self.status_bar.showMessage(tr("status.reloaded").format(path=path))
             if volid:
                 self.volume_id_edit.setText(volid)
             self._update_media_space(path)
         else:
-            self.status_bar.showMessage(f"重新加载失败: {error}")
+            self.status_bar.showMessage(tr("error.reload_failed").format(msg=error))
 
     def _install_focus_tracking(self):
         pass
@@ -701,7 +768,7 @@ def _add_placeholders_to_tree(node):
         node.children = [c for c in node.children if not c.is_placeholder]
         if not has_real_children:
             placeholder = FileNode(
-                name="——（空文件夹）——", path="", is_dir=False,
+                name="——", path="", is_dir=False,
                 is_placeholder=True
             )
             node.add_child(placeholder)
