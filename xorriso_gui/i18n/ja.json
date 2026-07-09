@@ -150,5 +150,7 @@
     "mount.no_pkexec": "pkexec が見つかりません。sudo mount ... を手動で実行してください",
     "mount.sessions_found": "{n} 個のセッションが見つかりました。最新をデフォルト選択。",
     "mount.single_session": "単一セッションディスク。",
-    "btn.mount": "マウント"
+    "btn.mount": "マウント",
+    "mount.auth_failed": "認証に失敗しました。パスワードが間違っているか拒否されました。",
+    "mount.no_elevator": "グラフィカル権限昇格ツールが見つかりません (pkexec/kdesu/gksudo)。"
 }

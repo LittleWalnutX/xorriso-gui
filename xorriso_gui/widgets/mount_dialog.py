@@ -65,12 +65,15 @@ class MountDialog(QDialog):
         layout.addLayout(bl)
 
     def _build_command(self):
-        opts = ["ro"] if self.ro_check.isChecked() else ["rw"]
         session = self.session_spin.value()
-        if session > 0:
-            opts.append(f"sbsector={session}")
+        opts = []
+        if self.ro_check.isChecked():
+            opts.append("ro")
+        if session > 1:
+            opts.append(f"session={session}")
         mount_pt = self.mount_edit.text().strip()
-        return f"mount -t iso9660 -o {','.join(opts)} '{self.drive_path}' '{mount_pt}'"
+        opt_str = f"-o {','.join(opts)}" if opts else ""
+        return f"mount -t iso9660 {opt_str} '{self.drive_path}' '{mount_pt}'".replace("  ", " ")
 
     def _on_copy(self):
         cmd = self._build_command()
@@ -80,33 +83,43 @@ class MountDialog(QDialog):
     def _on_execute(self):
         cmd = self._build_command()
         mount_pt = self.mount_edit.text().strip()
+        session = self.session_spin.value()
 
         import os
         os.makedirs(mount_pt, exist_ok=True)
 
-        full_cmd = f"mount -t iso9660 -o loop,ro '{self.drive_path}' '{mount_pt}'"
-        if self.session_spin.value() > 1:
-            opts = ["ro", f"session={self.session_spin.value()}"]
-            full_cmd = f"mount -t iso9660 -o {','.join(opts)} '{self.drive_path}' '{mount_pt}'"
-
         reply = QMessageBox.question(
             self, tr("mount.confirm_title"),
-            tr("mount.confirm_text").format(cmd=full_cmd),
+            tr("mount.confirm_text").format(cmd=cmd),
             QMessageBox.Yes | QMessageBox.No
         )
         if reply != QMessageBox.Yes:
             return
 
-        try:
-            result = subprocess.run(["pkexec", "mount", "-t", "iso9660", "-o",
-                                     "ro", self.drive_path, mount_pt],
-                                    capture_output=True, text=True, timeout=30)
-            if result.returncode == 0:
-                self.info_label.setText(tr("mount.success").format(pt=mount_pt))
-            else:
-                self.info_label.setText(tr("mount.failed").format(err=result.stderr.strip() or result.stdout.strip()))
-        except FileNotFoundError:
-            self.info_label.setText(tr("mount.no_pkexec"))
+        opts = []
+        if self.ro_check.isChecked():
+            opts.append("ro")
+        if session > 1:
+            opts.append(f"session={session}")
+        full_opts = ",".join(opts) if opts else "ro"
+        mount_args = ["mount", "-t", "iso9660", "-o", full_opts,
+                       self.drive_path, mount_pt]
+
+        for elevator in ["pkexec", "kdesu", "gksudo", "gksu"]:
+            try:
+                result = subprocess.run([elevator] + mount_args,
+                                        capture_output=True, text=True, timeout=60)
+                if result.returncode == 0:
+                    self.info_label.setText(tr("mount.success").format(pt=mount_pt))
+                    return
+                elif "not authorized" in (result.stderr + result.stdout).lower() \
+                        or "incorrect password" in (result.stderr + result.stdout).lower():
+                    self.info_label.setText(tr("mount.auth_failed"))
+                    return
+            except FileNotFoundError:
+                continue
+
+        self.info_label.setText(tr("mount.no_elevator"))
 
     def _load_sessions(self):
         self._worker = _SessionWorker(self.drive_path, self)

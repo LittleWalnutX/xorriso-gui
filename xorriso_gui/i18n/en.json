@@ -150,5 +150,7 @@
     "mount.no_pkexec": "pkexec not found. Try: sudo mount ...",
     "mount.sessions_found": "{n} sessions found. Latest selected by default.",
     "mount.single_session": "Single session disc.",
-    "btn.mount": "Mount"
+    "btn.mount": "Mount",
+    "mount.auth_failed": "Authentication failed. Incorrect password or denied.",
+    "mount.no_elevator": "No graphical privilege tool found (pkexec/kdesu/gksudo)."
 }

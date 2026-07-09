@@ -150,5 +150,7 @@
     "mount.no_pkexec": "未找到 pkexec，请手动 sudo mount ...",
     "mount.sessions_found": "发现 {n} 个会话，默认选择最新。",
     "mount.single_session": "单会话光盘。",
-    "btn.mount": "挂载"
+    "btn.mount": "挂载",
+    "mount.auth_failed": "验证失败，密码错误或已拒绝。",
+    "mount.no_elevator": "未找到图形化提权工具 (pkexec/kdesu/gksudo)。"
 }
