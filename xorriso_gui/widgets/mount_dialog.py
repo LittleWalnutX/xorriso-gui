@@ -16,8 +16,9 @@ class MountDialog(QDialog):
         self._sessions = {}
         self.setWindowTitle(tr("mount.title"))
         self.resize(500, 320)
+        self._toc_loaded = False
         self._init_ui()
-        self._load_sessions()
+        self._update_session_state()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
@@ -33,11 +34,15 @@ class MountDialog(QDialog):
         layout.addLayout(dl)
 
         fl = QHBoxLayout()
+        self.session_check = QCheckBox(tr("mount.specify_session"))
+        self.session_check.toggled.connect(self._on_session_toggled)
+        fl.addWidget(self.session_check)
         fl.addWidget(QLabel(tr("mount.session") + ":"))
         self.session_spin = QSpinBox()
         self.session_spin.setMinimum(1)
         self.session_spin.setMaximum(99)
         self.session_spin.setValue(1)
+        self.session_spin.setEnabled(False)
         fl.addWidget(self.session_spin)
         fl.addStretch()
         layout.addLayout(fl)
@@ -79,6 +84,16 @@ class MountDialog(QDialog):
         bl.addWidget(cancel_btn)
         layout.addLayout(bl)
 
+    def _update_session_state(self):
+        enabled = self.session_check.isChecked()
+        self.session_spin.setEnabled(enabled)
+        if enabled and not self._toc_loaded:
+            self._load_sessions()
+            self._toc_loaded = True
+
+    def _on_session_toggled(self):
+        self._update_session_state()
+
     def _resolve_drive(self):
         line_edit = self.drive_combo.lineEdit()
         text = line_edit.text().strip() if line_edit else ""
@@ -92,14 +107,14 @@ class MountDialog(QDialog):
 
     def _build_command(self):
         drive = self._resolve_drive() or self.drive_path
-        session = self.session_spin.value()
         ro = "ro" if self.ro_check.isChecked() else "rw"
         mount_pt = self.mount_edit.text().strip()
-        lba = self._sessions.get(session)
-        if lba and session > 1:
-            return f"mount -t iso9660 -o {ro},sbsector={lba} '{drive}' '{mount_pt}'"
-        else:
-            return f"mount -t iso9660 -o {ro} '{drive}' '{mount_pt}'"
+        if self.session_check.isChecked():
+            session = self.session_spin.value()
+            lba = self._sessions.get(session)
+            if lba and session > 1:
+                return f"mount -t iso9660 -o {ro},sbsector={lba} '{drive}' '{mount_pt}'"
+        return f"mount -t iso9660 -o {ro} '{drive}' '{mount_pt}'"
 
     def _on_copy(self):
         cmd = self._build_command()
@@ -141,11 +156,12 @@ class MountDialog(QDialog):
             return
 
         ro = "ro" if self.ro_check.isChecked() else "rw"
-        lba = self._sessions.get(session)
-        if lba and session > 1:
-            opts = f"{ro},sbsector={lba}"
-        else:
-            opts = ro
+        opts = ro
+        if self.session_check.isChecked():
+            session = self.session_spin.value()
+            lba = self._sessions.get(session)
+            if lba and session > 1:
+                opts = f"{ro},sbsector={lba}"
         mount_args = ["mount", "-t", "iso9660", "-o", opts, drive, mount_pt]
 
         found_elevator = False
@@ -218,12 +234,15 @@ class MountDialog(QDialog):
     def _on_sessions_loaded(self, sessions):
         self._sessions = {num: lba for num, lba in sessions}
         count = len(sessions)
-        if count > 1:
+        if count > 0:
             self.session_spin.setMaximum(count)
             self.session_spin.setValue(count)
+        if count > 1:
             self.info_label.setText(tr("mount.sessions_found").format(n=count))
-        else:
+        elif count == 1:
             self.info_label.setText(tr("mount.single_session"))
+        else:
+            self.info_label.setText(tr("mount.no_sessions"))
 
 
 class _SessionWorker(QThread):

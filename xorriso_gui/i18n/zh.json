@@ -167,5 +167,7 @@
     "mount.unmount_confirm_text": "卸载 {pt}？",
     "mount.unmounting": "正在通过 {tool} 卸载 {pt}...",
     "mount.unmount_ok": "已卸载 {pt}",
-    "mount.unmount_failed": "卸载失败: {err}"
+    "mount.unmount_failed": "卸载失败: {err}",
+    "mount.specify_session": "指定会话",
+    "mount.no_sessions": "未找到会话。"
 }

@@ -167,5 +167,7 @@
     "mount.unmount_confirm_text": "Unmount {pt} ?",
     "mount.unmounting": "Unmounting {pt} via {tool}...",
     "mount.unmount_ok": "Unmounted {pt}",
-    "mount.unmount_failed": "Unmount failed: {err}"
+    "mount.unmount_failed": "Unmount failed: {err}",
+    "mount.specify_session": "Specify session",
+    "mount.no_sessions": "No sessions found."
 }

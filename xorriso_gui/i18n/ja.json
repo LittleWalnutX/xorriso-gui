@@ -167,5 +167,7 @@
     "mount.unmount_confirm_text": "{pt} をアンマウントしますか？",
     "mount.unmounting": "{tool} で {pt} をアンマウント中...",
     "mount.unmount_ok": "{pt} をアンマウントしました",
-    "mount.unmount_failed": "アンマウント失敗: {err}"
+    "mount.unmount_failed": "アンマウント失敗: {err}",
+    "mount.specify_session": "セッション指定",
+    "mount.no_sessions": "セッションが見つかりません。"
 }
