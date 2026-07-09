@@ -1,4 +1,5 @@
 import subprocess
+import os
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                                 QLabel, QLineEdit, QSpinBox, QCheckBox,
@@ -42,7 +43,7 @@ class MountDialog(QDialog):
 
         ml = QHBoxLayout()
         ml.addWidget(QLabel(tr("mount.mount_point") + ":"))
-        self.mount_edit = QLineEdit("/mnt/xorriso")
+        self.mount_edit = QLineEdit(os.path.expanduser("~/mnt/xorriso"))
         ml.addWidget(self.mount_edit)
         layout.addLayout(ml)
 
@@ -107,8 +108,10 @@ class MountDialog(QDialog):
         mount_pt = self.mount_edit.text().strip()
         session = self.session_spin.value()
 
-        import os
-        os.makedirs(mount_pt, exist_ok=True)
+        try:
+            os.makedirs(mount_pt, exist_ok=True)
+        except (PermissionError, OSError):
+            pass
 
         reply = QMessageBox.question(
             self, tr("mount.confirm_title"),
