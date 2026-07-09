@@ -91,7 +91,7 @@ class MountDialog(QDialog):
         ro = "ro" if self.ro_check.isChecked() else "rw"
         mount_pt = self.mount_edit.text().strip()
         if session > 1:
-            return f"xorriso -dev '{drive}' -osirrox on -mount '{drive}' {session} '{mount_pt}'"
+            return f"xorriso -dev '{drive}' -osirrox on -mount '{drive}' auto {session} '{mount_pt}'"
         else:
             return f"mount -t iso9660 -o {ro} '{drive}' '{mount_pt}'"
 
@@ -121,7 +121,7 @@ class MountDialog(QDialog):
 
         if session > 1:
             mount_args = ["xorriso", "-dev", drive, "-osirrox", "on",
-                          "-mount", drive, str(session), mount_pt]
+                          "-mount", drive, "auto", str(session), mount_pt]
         else:
             ro = "ro" if self.ro_check.isChecked() else "rw"
             mount_args = ["mount", "-t", "iso9660", "-o", ro, drive, mount_pt]
