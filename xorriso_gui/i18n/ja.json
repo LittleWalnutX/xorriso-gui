@@ -170,6 +170,6 @@
     "mount.unmount_failed": "アンマウント失敗: {err}",
     "mount.specify_session": "セッション指定",
     "mount.no_sessions": "セッションが見つかりません。",
-    "menu.add_to_iso_with_path": "パスを保持して追加",
-    "menu.add_to_iso_with_path_tip": "相対ディレクトリ構造を保持して ISO に追加"
+    "menu.add_to_iso_with_path": "パスを保持してイメージに追加",
+    "menu.add_to_iso_with_path_tip": "相対ディレクトリ構造を保持してイメージに追加"
 }

@@ -374,8 +374,8 @@ class MainWindow(QMainWindow):
     def _apply_task_to_tree(self, root, task):
         if task.task_type == TaskType.MAP or task.task_type == TaskType.ADD:
             parent_path, name = _split_iso_path(task.target)
-            parent = _find_node(root, parent_path)
-            if parent and parent.is_dir:
+            parent = _ensure_parent_path(root, parent_path)
+            if parent:
                 _remove_placeholder(parent)
                 node = FileNode(name=name, path=task.target, size=0,
                                 is_dir=False, mode="-rw-r--r--")
@@ -383,8 +383,8 @@ class MainWindow(QMainWindow):
                 parent.sort_children()
         elif task.task_type == TaskType.MKDIR:
             parent_path, name = _split_iso_path(task.target)
-            parent = _find_node(root, parent_path)
-            if parent and parent.is_dir:
+            parent = _ensure_parent_path(root, parent_path)
+            if parent:
                 _remove_placeholder(parent)
                 if not parent.find_child(name):
                     node = FileNode(name=name, path=task.target,
@@ -649,6 +649,8 @@ class MainWindow(QMainWindow):
             return False
         elif not input_drive and output_drive:
             builder.set_output_drive(output_drive)
+            if not output_is_disc:
+                builder.set_blank(True)
         else:
             QMessageBox.warning(self, "错误",
                 tr("error.no_output"))
@@ -799,6 +801,22 @@ def _find_node(root, path):
         if found is None:
             return None
         current = found
+    return current
+
+
+def _ensure_parent_path(root, path):
+    if path == "/" or path == "":
+        return root
+    parts = [p for p in path.strip("/").split("/") if p]
+    current = root
+    for part in parts:
+        child = current.find_child(part)
+        if child is None or not child.is_dir:
+            _remove_placeholder(current)
+            child = FileNode(name=part, path=current.path.rstrip("/") + "/" + part,
+                             is_dir=True, mode="drwxr-xr-x")
+            current.add_child(child)
+        current = child
     return current
 
 

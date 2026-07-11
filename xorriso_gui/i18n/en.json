@@ -170,6 +170,6 @@
     "mount.unmount_failed": "Unmount failed: {err}",
     "mount.specify_session": "Specify session",
     "mount.no_sessions": "No sessions found.",
-    "menu.add_to_iso_with_path": "Add to ISO with path",
-    "menu.add_to_iso_with_path_tip": "Preserve relative directory structure in ISO"
+    "menu.add_to_iso_with_path": "Add to Image with Path",
+    "menu.add_to_iso_with_path_tip": "Preserve relative directory structure in image"
 }

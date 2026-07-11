@@ -170,6 +170,6 @@
     "mount.unmount_failed": "卸载失败: {err}",
     "mount.specify_session": "指定会话",
     "mount.no_sessions": "未找到会话。",
-    "menu.add_to_iso_with_path": "按路径添加到右边",
-    "menu.add_to_iso_with_path_tip": "保持相对目录结构添加到 ISO"
+    "menu.add_to_iso_with_path": "按路径添加到镜像",
+    "menu.add_to_iso_with_path_tip": "保持相对目录结构添加到镜像"
 }
