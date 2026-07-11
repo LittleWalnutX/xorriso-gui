@@ -3,9 +3,8 @@ set -euo pipefail
 
 APP_NAME="xorriso-gui"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BUILD_DIR="/tmp/${APP_NAME}-build"
+BUILD_DIR="$SCRIPT_DIR/build_appimage"
 APPDIR="$BUILD_DIR/${APP_NAME}.AppDir"
-OUTPUT_DIR="$SCRIPT_DIR/build_appimage"
 
 echo "=== Building $APP_NAME AppImage (optimized) ==="
 
@@ -140,14 +139,13 @@ cp "$SCRIPT_DIR/xorriso-gui.desktop" "$APPDIR/"
 cp "$SCRIPT_DIR/xorriso_gui/assets/icon.svg" "$APPDIR/xorriso-gui.svg"
 
 echo "Step 4: Package AppImage..."
-mkdir -p "$OUTPUT_DIR"
 if command -v appimagetool &>/dev/null; then
-    ARCH=x86_64 appimagetool "$APPDIR" "$OUTPUT_DIR/${APP_NAME}-$(date +%Y%m%d)-x86_64.AppImage"
-    SIZE=$(ls -lh "$OUTPUT_DIR"/${APP_NAME}-*.AppImage 2>/dev/null | awk '{print $5}')
+    ARCH=x86_64 appimagetool "$APPDIR" "$BUILD_DIR/${APP_NAME}-$(date +%Y%m%d)-x86_64.AppImage"
+    SIZE=$(ls -lh "$BUILD_DIR"/${APP_NAME}-*.AppImage 2>/dev/null | awk '{print $5}')
     echo "=== AppImage created: $SIZE ==="
 elif [ -x /tmp/appimagetool ]; then
-    ARCH=x86_64 /tmp/appimagetool "$APPDIR" "$OUTPUT_DIR/${APP_NAME}-$(date +%Y%m%d)-x86_64.AppImage"
-    SIZE=$(ls -lh "$OUTPUT_DIR"/${APP_NAME}-*.AppImage 2>/dev/null | awk '{print $5}')
+    ARCH=x86_64 /tmp/appimagetool "$APPDIR" "$BUILD_DIR/${APP_NAME}-$(date +%Y%m%d)-x86_64.AppImage"
+    SIZE=$(ls -lh "$BUILD_DIR"/${APP_NAME}-*.AppImage 2>/dev/null | awk '{print $5}')
     echo "=== AppImage created: $SIZE ==="
 else
     echo ""
