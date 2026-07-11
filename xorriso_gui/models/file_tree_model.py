@@ -61,10 +61,17 @@ class FileTreeModel(QAbstractItemModel):
         self._init_icons()
 
     def _init_icons(self):
-        style = QIcon.fromTheme
-        self._icons["dir"] = style("folder") if not QIcon.fromTheme("folder").isNull() else QIcon()
-        self._icons["file"] = style("text-x-generic") if not QIcon.fromTheme("text-x-generic").isNull() else QIcon()
-        self._icons["symlink"] = style("emblem-symbolic-link") if not QIcon.fromTheme("emblem-symbolic-link").isNull() else QIcon()
+        from PySide6.QtWidgets import QApplication, QStyle
+        sty = QApplication.style()
+        self._icons["dir"] = QIcon.fromTheme("folder")
+        if self._icons["dir"].isNull() and sty:
+            self._icons["dir"] = sty.standardIcon(QStyle.StandardPixmap.SP_DirIcon)
+        self._icons["file"] = QIcon.fromTheme("text-x-generic")
+        if self._icons["file"].isNull() and sty:
+            self._icons["file"] = sty.standardIcon(QStyle.StandardPixmap.SP_FileIcon)
+        self._icons["symlink"] = QIcon.fromTheme("emblem-symbolic-link")
+        if self._icons["symlink"].isNull() and sty:
+            self._icons["symlink"] = sty.standardIcon(QStyle.StandardPixmap.SP_FileLinkIcon)
 
     def root_node(self):
         return self._root
