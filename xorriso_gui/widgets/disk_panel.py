@@ -15,6 +15,7 @@ from xorriso_gui.i18n import tr
 class DiskPanel(QWidget):
     path_changed = Signal(str)
     add_to_iso = Signal(str, str)
+    add_to_iso_with_path = Signal(str, str)
     open_terminal = Signal(str)
     load_iso_file = Signal(str)
 
@@ -119,6 +120,13 @@ class DiskPanel(QWidget):
         add_act.triggered.connect(self._on_add_selected_to_iso)
         menu.addAction(add_act)
 
+        if selected:
+            add_path_act = QAction(tr("menu.add_to_iso_with_path"), self)
+            add_path_act.setToolTip(tr("menu.add_to_iso_with_path_tip"))
+            add_path_act.triggered.connect(
+                lambda: self._on_add_selected_with_path(current_dir))
+            menu.addAction(add_path_act)
+
         iso_files = [p for p in selected if p.lower().endswith(".iso")]
         if iso_files:
             open_iso_act = QAction(tr("menu.open_as_iso"), self)
@@ -148,6 +156,17 @@ class DiskPanel(QWidget):
         for path in self.get_selected_paths():
             name = os.path.basename(path)
             self.add_to_iso.emit(path, "/" + name)
+
+    def _on_add_selected_with_path(self, base_dir):
+        base = base_dir.rstrip("/")
+        for path in self.get_selected_paths():
+            if path.startswith(base + "/"):
+                rel = path[len(base) + 1:]
+            elif path == base:
+                continue
+            else:
+                rel = os.path.basename(path)
+            self.add_to_iso_with_path.emit(path, "/" + rel)
 
     def _on_open_as_iso(self, path):
         self.load_iso_file.emit(path)

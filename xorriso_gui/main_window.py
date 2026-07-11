@@ -233,6 +233,7 @@ class MainWindow(QMainWindow):
         self.iso_panel.prepare_extract.connect(self._on_extract_from_iso)
         self.iso_panel.prepare_mkdir.connect(self._on_mkdir_in_iso)
         self.disk_panel.add_to_iso.connect(self._on_add_to_iso)
+        self.disk_panel.add_to_iso_with_path.connect(self._on_add_to_iso)
         self.disk_panel.open_terminal.connect(self._on_open_terminal)
         self.disk_panel.load_iso_file.connect(self._on_load_iso_from_disk)
 
