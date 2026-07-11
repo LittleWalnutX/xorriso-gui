@@ -3,8 +3,9 @@ set -euo pipefail
 
 APP_NAME="xorriso-gui"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BUILD_DIR="$SCRIPT_DIR/build_appimage"
+BUILD_DIR="/tmp/${APP_NAME}-build"
 APPDIR="$BUILD_DIR/${APP_NAME}.AppDir"
+OUTPUT_DIR="$SCRIPT_DIR/build_appimage"
 
 echo "=== Building $APP_NAME AppImage (optimized) ==="
 
@@ -66,7 +67,7 @@ strip_unused() {
     rm -f "$base"/lib/libswresample* "$base"/lib/libswscale* 2>/dev/null || true
 
     echo "  Removing unused Qt .so libs..."
-    KEEP_LIBS="Qt6Core Qt6Gui Qt6Widgets Qt6XcbQpa Qt6WaylandClient Qt6WlShellIntegration Qt6Concurrent icu icudata Qt6DBus"
+    KEEP_LIBS="Qt6Core Qt6Gui Qt6Widgets Qt6XcbQpa Qt6WaylandClient Qt6WlShellIntegration Qt6Concurrent icu icudata Qt6DBus Qt6Svg"
     LIBDIR="$base/lib"
     for lib in "$LIBDIR"/lib*.so*; do
         if [ ! -f "$lib" ]; then continue; fi
@@ -85,7 +86,7 @@ strip_unused() {
         name=$(basename "$f")
         if [ ! -f "$f" ]; then continue; fi
         case "$name" in
-            QtCore.*|QtGui.*|QtWidgets.*|QtWaylandClient.*|QtDBus.*|QtConcurrent.*|__init__.*) ;;
+            QtCore.*|QtGui.*|QtWidgets.*|QtWaylandClient.*|QtDBus.*|QtConcurrent.*|QtSvg.*|__init__.*) ;;
             *) rm -f "$f" ;;
         esac
     done
@@ -139,13 +140,14 @@ cp "$SCRIPT_DIR/xorriso-gui.desktop" "$APPDIR/"
 cp "$SCRIPT_DIR/xorriso_gui/assets/icon.svg" "$APPDIR/xorriso-gui.svg"
 
 echo "Step 4: Package AppImage..."
+mkdir -p "$OUTPUT_DIR"
 if command -v appimagetool &>/dev/null; then
-    ARCH=x86_64 appimagetool "$APPDIR" "$BUILD_DIR/${APP_NAME}-$(date +%Y%m%d)-x86_64.AppImage"
-    SIZE=$(ls -lh "$BUILD_DIR"/${APP_NAME}-*.AppImage 2>/dev/null | awk '{print $5}')
+    ARCH=x86_64 appimagetool "$APPDIR" "$OUTPUT_DIR/${APP_NAME}-$(date +%Y%m%d)-x86_64.AppImage"
+    SIZE=$(ls -lh "$OUTPUT_DIR"/${APP_NAME}-*.AppImage 2>/dev/null | awk '{print $5}')
     echo "=== AppImage created: $SIZE ==="
 elif [ -x /tmp/appimagetool ]; then
-    ARCH=x86_64 /tmp/appimagetool "$APPDIR" "$BUILD_DIR/${APP_NAME}-$(date +%Y%m%d)-x86_64.AppImage"
-    SIZE=$(ls -lh "$BUILD_DIR"/${APP_NAME}-*.AppImage 2>/dev/null | awk '{print $5}')
+    ARCH=x86_64 /tmp/appimagetool "$APPDIR" "$OUTPUT_DIR/${APP_NAME}-$(date +%Y%m%d)-x86_64.AppImage"
+    SIZE=$(ls -lh "$OUTPUT_DIR"/${APP_NAME}-*.AppImage 2>/dev/null | awk '{print $5}')
     echo "=== AppImage created: $SIZE ==="
 else
     echo ""
