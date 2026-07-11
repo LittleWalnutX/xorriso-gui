@@ -30,8 +30,6 @@ python3.14 -m PyInstaller \
     --exclude-module unittest \
     --exclude-module test \
     --exclude-module pydoc \
-    --exclude-module logging \
-    --exclude-module argparse \
     --distpath "$BUILD_DIR/dist" \
     --workpath "$BUILD_DIR/build" \
     -y \
