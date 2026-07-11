@@ -17,6 +17,7 @@ python3.14 -m PyInstaller \
     --windowed \
     --name "$APP_NAME" \
     --add-data "xorriso_gui/assets:xorriso_gui/assets" \
+    --add-data "xorriso_gui/i18n:xorriso_gui/i18n" \
     --collect-all "PySide6" \
     --exclude-module tkinter \
     --exclude-module sqlite3 \
