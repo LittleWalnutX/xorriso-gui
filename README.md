@@ -6,6 +6,10 @@
 
 ## 安装
 
+推荐使用云盘下载
+
+链接：https://pan.ustc.edu.cn/share/index/23ffd153daf644688661
+
 ```bash
 # 解压后一键安装（自动安装依赖 + 生成桌面入口）
 ./install.sh
